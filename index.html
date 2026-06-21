@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>مشروع تربية الماعز — منزل بوزيان</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #1a7a1a;
+      --green-bg: #e8f5e8;
+      --green-border: #4caf50;
+      --red: #c0392b;
+      --red-bg: #fdecea;
+      --red-border: #e74c3c;
+      --yellow: #b8860b;
+      --yellow-bg: #fffde7;
+      --yellow-border: #f9a825;
+      --blue: #1565c0;
+      --blue-bg: #e3f2fd;
+      --blue-border: #1976d2;
+      --orange: #e65100;
+      --orange-bg: #fff3e0;
+      --orange-border: #f57c00;
+      --bg: #f5f5f0;
+      --text: #1a1a1a;
+      --card: #ffffff;
+      --shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      font-size: 20px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      direction: rtl;
+      min-height: 100vh;
+    }
+
+    /* ===== الرأس ===== */
+    #app-header {
+      background: linear-gradient(135deg, #2e7d32, #1b5e20);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    #back-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 28px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #header-title {
+      font-size: 22px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    /* ===== الشاشات ===== */
+    .screen { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+    .screen.active { display: block; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== الشبكة الرئيسية ===== */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .main-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px 14px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      border: 3px solid transparent;
+      transition: transform 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .main-card:active { transform: scale(0.95); }
+    .main-card .icon  { font-size: 50px; display: block; margin-bottom: 10px; }
+    .main-card .label { font-size: 18px; font-weight: 700; }
+
+    .main-card.c1 { border-color: #8bc34a; background: #f1f8e9; }
+    .main-card.c2 { border-color: #42a5f5; background: #e3f2fd; }
+    .main-card.c3 { border-color: #ff9800; background: #fff3e0; }
+    .main-card.c4 { border-color: #66bb6a; background: #e8f5e9; }
+    .main-card.c5 { border-color: #ef5350; background: #ffebee; }
+    .main-card.c6 { border-color: #ab47bc; background: #f3e5f5; }
+
+    /* ===== بطاقات ===== */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-green  { background: var(--green-bg);  border-right: 6px solid var(--green-border);  border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+    .card-red    { background: var(--red-bg);    border-right: 6px solid var(--red-border);    border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+    .card-yellow { background: var(--yellow-bg); border-right: 6px solid var(--yellow-border); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+    .card-blue   { background: var(--blue-bg);   border-right: 6px solid var(--blue-border);   border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+    .card-orange { background: var(--orange-bg); border-right: 6px solid var(--orange-border); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+
+    /* ===== عناوين ===== */
+    .section-title { font-size: 26px; font-weight: 900; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+    .sub-title     { font-size: 21px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+
+    p  { font-size: 20px; margin-bottom: 8px; }
+    li { font-size: 20px; margin-bottom: 6px; list-style: none; }
+    ul { padding: 0; }
+
+    .divider { height: 1px; background: #e0e0e0; margin: 14px 0; }
+
+    /* ===== زر استمع ===== */
+    .listen-btn {
+      background: #1565c0;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 10px 22px;
+      font-size: 18px;
+      font-family: 'Cairo', sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      box-shadow: 0 3px 8px rgba(21,101,192,0.35);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== تحذير كبير ===== */
+    .big-warning {
+      background: var(--red-bg);
+      border: 3px solid var(--red-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .big-warning .warn-icon { font-size: 46px; }
+    .big-warning .warn-text { font-size: 22px; font-weight: 700; color: var(--red); margin-top: 8px; }
+
+    /* ===== شجرة التهجين ===== */
+    .tree-container {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      overflow-x: auto;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .tree { display: flex; flex-direction: column; align-items: center; }
+    .tree-row { display: flex; gap: 10px; justify-content: center; align-items: center; }
+
+    .tree-box {
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      min-width: 108px;
+      max-width: 130px;
+    }
+    .tree-box .box-icon  { font-size: 26px; display: block; }
+    .tree-box .box-label { font-size: 13px; font-weight: 700; margin-top: 4px; line-height: 1.3; }
+
+    .tree-box.blue   { background: #bbdefb; border: 2px solid #1565c0; color: #0d47a1; }
+    .tree-box.orange { background: #ffe0b2; border: 2px solid #e65100; color: #bf360c; }
+    .tree-box.green  { background: #c8e6c9; border: 2px solid #2e7d32; color: #1b5e20; }
+    .tree-box.gray   { background: #f5f5f5; border: 2px solid #9e9e9e; color: #424242; }
+    .tree-box.red    { background: #ffcdd2; border: 2px solid #c62828; color: #b71c1c; }
+
+    .tree-arrow { font-size: 26px; color: #777; margin: 2px 0; text-align: center; }
+
+    /* ===== مخطط الدورة ===== */
+    .cycle-flow { display: flex; flex-direction: column; align-items: center; }
+    .cycle-box  {
+      background: white;
+      border: 3px solid #42a5f5;
+      border-radius: 14px;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      width: 100%;
+      max-width: 280px;
+    }
+    .cycle-box.hl { background: #e3f2fd; }
+    .cycle-arrow  { font-size: 30px; color: #666; margin: 3px 0; }
+
+    /* ===== BCS ===== */
+    .bcs-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+    .bcs-card {
+      flex-shrink: 0;
+      width: 118px;
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .bcs-score { font-size: 22px; font-weight: 900; }
+    .bcs-label { font-size: 13px; font-weight: 700; }
+
+    /* ===== علف ===== */
+    .feed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .feed-card {
+      background: white;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 2px solid #e0e0e0;
+    }
+    .feed-card .feed-icon   { font-size: 34px; }
+    .feed-card .feed-name   { font-size: 15px; font-weight: 700; margin-top: 6px; }
+    .feed-card .feed-amount { font-size: 22px; font-weight: 900; color: #1565c0; }
+    .feed-card .feed-unit   { font-size: 13px; color: #666; }
+
+    /* ===== بطاقة سلالة ===== */
+    .breed-card   { background: white; border-radius: 20px; padding: 22px 18px; margin-bottom: 16px; box-shadow: var(--shadow); border: 3px solid #e0e0e0; }
+    .breed-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .breed-name   { font-size: 23px; font-weight: 900; }
+    .breed-sub    { font-size: 15px; color: #666; }
+
+    /* ===== نموذج التسجيل ===== */
+    .step-indicator { display: flex; gap: 6px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+    .step-dot       { width: 13px; height: 13px; border-radius: 50%; background: #ccc; }
+    .step-dot.active{ background: #2e7d32; }
+    .step-dot.done  { background: #81c784; }
+
+    .form-card     { background: white; border-radius: 20px; padding: 26px 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+    .form-question { font-size: 23px; font-weight: 700; margin-bottom: 18px; }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 15px 16px;
+      font-size: 21px;
+      font-family: 'Cairo', sans-serif;
+      border: 3px solid #ccc;
+      border-radius: 12px;
+      color: var(--text);
+      background: #fafafa;
+      outline: none;
+      direction: rtl;
+      margin-bottom: 10px;
+    }
+    .form-input:focus, .form-select:focus { border-color: #2e7d32; }
+    .form-select { appearance: none; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 18px;
+      font-size: 21px;
+      font-weight: 700;
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(135deg, #2e7d32, #1b5e20);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(46,125,50,0.4);
+      margin-top: 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 16px;
+      font-size: 19px;
+      font-weight: 700;
+      font-family: 'Cairo', sans-serif;
+      background: white;
+      color: #2e7d32;
+      border: 3px solid #2e7d32;
+      border-radius: 14px;
+      cursor: pointer;
+      margin-top: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-danger {
+      background: #c62828;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 18px;
+      font-size: 17px;
+      font-family: 'Cairo', sans-serif;
+      cursor: pointer;
+    }
+
+    /* ===== بطاقات الحيوانات ===== */
+    .animal-card { background: white; border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border-right: 6px solid #ccc; }
+    .animal-card.healthy { border-color: var(--green-border); }
+    .animal-card.warning { border-color: var(--yellow-border); }
+    .animal-card.danger  { border-color: var(--red-border); }
+
+    .animal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .animal-id     { font-size: 24px; font-weight: 900; }
+    .animal-badge  { background: #e3f2fd; color: #1565c0; border-radius: 20px; padding: 4px 12px; font-size: 15px; font-weight: 700; }
+
+    .animal-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 17px; }
+    .info-label  { color: #666; font-size: 14px; }
+    .info-value  { font-weight: 700; }
+
+    .reminder-box { background: #fff8e1; border: 2px solid #f9a825; border-radius: 10px; padding: 12px; margin-top: 10px; font-size: 17px; }
+    .bcs-warn     { background: var(--red-bg); border: 2px solid var(--red-border); border-radius: 10px; padding: 10px; margin-top: 8px; font-size: 17px; font-weight: 700; color: var(--red); }
+
+    .success-box { background: var(--green-bg); border: 3px solid var(--green-border); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 16px; }
+    .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+    .empty-state .e-icon { font-size: 62px; margin-bottom: 14px; }
+
+    .export-area { background: #f5f5f5; border-radius: 12px; padding: 14px; font-size: 14px; white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto; margin-top: 10px; display: none; text-align: right; }
+
+    @media (min-width: 480px) {
+      .main-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== الرأس ===== -->
+<div id="app-header">
+  <button id="back-btn" onclick="goHome()">←</button>
+  <span id="header-title">🐐 مزرعة الماعز — منزل بوزيان</span>
+</div>
+
+<!-- ===== الرئيسية ===== -->
+<div id="screen-home" class="screen active">
+  <div style="text-align:center; padding:18px 16px 8px; color:#2e7d32; font-size:18px; font-weight:600;">اختر قسماً للبدء 👇</div>
+  <div class="main-grid">
+    <div class="main-card c1" onclick="go('breeds')">  <span class="icon">🐐</span>   <span class="label">قطيعي<br/>أنواع الماعز</span></div>
+    <div class="main-card c2" onclick="go('breeding')"><span class="icon">🧬</span>   <span class="label">التهجين<br/>والأجيال</span></div>
+    <div class="main-card c3" onclick="go('cycle')">   <span class="icon">⏱️</span>  <span class="label">الدورة<br/>والمواعيد</span></div>
+    <div class="main-card c4" onclick="go('feeding')"> <span class="icon">🌾</span>   <span class="label">التغذية<br/>والماء</span></div>
+    <div class="main-card c5" onclick="go('rules')">   <span class="icon">✅⛔</span> <span class="label">التوصيات<br/>والتحذيرات</span></div>
+    <div class="main-card c6" onclick="go('register')"><span class="icon">📝</span>   <span class="label">سجّل<br/>قطيعي</span></div>
+  </div>
+</div>
+
+<!-- ===== القسم 1: أنواع الماعز ===== -->
+<div id="screen-breeds" class="screen">
+  <div class="section-title">🐐 أنواع الماعز في قطيعك</div>
+  <button class="listen-btn" onclick="speak('هناك ثلاثة أنواع من الماعز في قطيعك. الماعز العربي البلدي وهو أساس الأمهات. الماعز الدمشقي وهو الفحل الأساسي للتهجين. وماعز البور وهو فحل اللحم التجاري.')">🔊 استمع</button>
+
+  <!-- العربي -->
+  <div class="breed-card">
+    <div class="breed-header">
+      <svg width="68" height="68" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="62" rx="32" ry="20" fill="#c8a96e"/>
+        <ellipse cx="72" cy="48" rx="18" ry="14" fill="#c8a96e"/>
+        <circle cx="82" cy="38" r="10" fill="#c8a96e"/>
+        <path d="M78 30 Q74 18 70 14" stroke="#8B6914" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M86 30 Q90 18 94 14" stroke="#8B6914" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="86" cy="36" r="2.5" fill="#333"/>
+        <line x1="35" y1="78" x2="33" y2="95" stroke="#a08040" stroke-width="5" stroke-linecap="round"/>
+        <line x1="48" y1="80" x2="46" y2="96" stroke="#a08040" stroke-width="5" stroke-linecap="round"/>
+        <line x1="58" y1="80" x2="60" y2="96" stroke="#a08040" stroke-width="5" stroke-linecap="round"/>
+        <line x1="65" y1="78" x2="68" y2="95" stroke="#a08040" stroke-width="5" stroke-linecap="round"/>
+        <path d="M20 60 Q12 55 14 50" stroke="#c8a96e" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div><div class="breed-name">الماعز العربي (البلدي)</div><div class="breed-sub">أساس قطيع الأمهات 🏠</div></div>
+    </div>
+    <div class="card-green"><li>✅ صلب جداً — يتحمّل الحرّ والجفاف والماء المالح</li><li>✅ مرعى فقير يكفيه — رخيص ومتأقلم مع منزل بوزيان</li></div>
+    <div class="card-yellow"><li>⚠️ حجمه أصغر ونموّ الجداء أبطأ</li><li>⚠️ حليبه أقل من الدمشقي</li></div>
+    <div class="card-blue"><p><strong>🎯 دوره:</strong> الأمهات + نواة وراثية تبقى دائماً</p></div>
+  </div>
+
+  <!-- الدمشقي -->
+  <div class="breed-card">
+    <div class="breed-header">
+      <svg width="68" height="68" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="62" rx="35" ry="22" fill="#d4956b"/>
+        <ellipse cx="74" cy="47" rx="20" ry="16" fill="#d4956b"/>
+        <circle cx="85" cy="35" r="13" fill="#d4956b"/>
+        <ellipse cx="74" cy="27" rx="6" ry="12" fill="#c07850" transform="rotate(-20,74,27)"/>
+        <ellipse cx="96" cy="29" rx="6" ry="12" fill="#c07850" transform="rotate(20,96,29)"/>
+        <path d="M80 26 Q76 14 72 10" stroke="#7a4e28" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M90 26 Q95 14 99 10" stroke="#7a4e28" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="89" cy="33" r="3" fill="#333"/>
+        <line x1="32" y1="80" x2="30" y2="97" stroke="#a06030" stroke-width="6" stroke-linecap="round"/>
+        <line x1="46" y1="82" x2="44" y2="98" stroke="#a06030" stroke-width="6" stroke-linecap="round"/>
+        <line x1="58" y1="82" x2="60" y2="98" stroke="#a06030" stroke-width="6" stroke-linecap="round"/>
+        <line x1="68" y1="80" x2="72" y2="97" stroke="#a06030" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      <div><div class="breed-name">الماعز الدمشقي (الشامي)</div><div class="breed-sub">فحل التهجين الأساسي 🔀</div></div>
+    </div>
+    <div class="card-green"><li>✅ كبير الحجم — نمو سريع جداً للجداء</li><li>✅ حليب وفير — يمنح الجداء حجماً أفضل</li></div>
+    <div class="card-red"><li>🔴 لا يتحمّل حرّ سيدي بوزيد — يحتاج ظلاً وماءً بارداً</li><li>🔴 يحتاج عزلاً ورعاية خاصة</li></div>
+    <div class="card-blue"><p><strong>🎯 دوره:</strong> فحل فقط — يُلقّح الأمهات العربيات</p></div>
+  </div>
+
+  <!-- البور -->
+  <div class="breed-card">
+    <div class="breed-header">
+      <svg width="68" height="68" viewBox="0 0 100 100">
+        <ellipse cx="48" cy="62" rx="38" ry="24" fill="#e8e0d0"/>
+        <ellipse cx="73" cy="47" rx="22" ry="17" fill="#e8e0d0"/>
+        <circle cx="84" cy="34" r="15" fill="#e8e0d0"/>
+        <circle cx="84" cy="30" r="14" fill="#c0392b" opacity="0.65"/>
+        <ellipse cx="84" cy="34" rx="14" ry="10" fill="#c0392b" opacity="0.45"/>
+        <ellipse cx="72" cy="24" rx="5" ry="11" fill="#b0281a" transform="rotate(-10,72,24)"/>
+        <ellipse cx="96" cy="24" rx="5" ry="11" fill="#b0281a" transform="rotate(10,96,24)"/>
+        <circle cx="88" cy="30" r="3" fill="#222"/>
+        <line x1="28" y1="82" x2="25" y2="98" stroke="#c8c0a0" stroke-width="7" stroke-linecap="round"/>
+        <line x1="44" y1="84" x2="42" y2="99" stroke="#c8c0a0" stroke-width="7" stroke-linecap="round"/>
+        <line x1="58" y1="84" x2="60" y2="99" stroke="#c8c0a0" stroke-width="7" stroke-linecap="round"/>
+        <line x1="68" y1="82" x2="72" y2="98" stroke="#c8c0a0" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <div><div class="breed-name">ماعز البور (Boer)</div><div class="breed-sub">فحل اللحم التجاري 🥩</div></div>
+    </div>
+    <div class="card-green"><li>✅ سلالة لحم بامتياز — نمو سريع جداً للجداء</li><li>✅ يعطي أسرع نمو ممكن لجداء البيع</li></div>
+    <div class="card-red"><li>🔴 لا يتحمّل الحرّ — نفس رعاية الدمشقي</li><li>🔴 لا تشترِه الآن — فقط في السنة 2 أو 3</li></div>
+    <div class="card-blue"><p><strong>🎯 دوره:</strong> فحل الخط التجاري فقط — كل نتاجه يُباع 🥩</p></div>
+  </div>
+
+  <div class="big-warning">
+    <div class="warn-icon">💡</div>
+    <div class="warn-text">صلابة قطيعك في الأمهات العربيات لا في الفحول!</div>
+    <p style="font-size:18px;margin-top:8px;color:#333;">كل فحل مستورد نقطة ضعف مناخية تحتاج رعاية خاصة.</p>
+  </div>
+</div>
+
+<!-- ===== القسم 2: التهجين ===== -->
+<div id="screen-breeding" class="screen">
+  <div class="section-title">🧬 التهجين والأجيال</div>
+  <button class="listen-btn" onclick="speak('لديك خطّان منفصلان. الخط الأول مصنع الأمهات ويبقى صلباً دائماً بالدوران بين الدمشقي والعربي. الخط الثاني خط اللحم التجاري وكل نتاجه يُباع.')">🔊 استمع</button>
+
+  <div class="card-blue"><div class="sub-title">💡 الفكرة الكبرى</div><p style="font-size:22px;font-weight:700;">خطّان منفصلان — لكل واحد زريبته وفحله</p></div>
+
+  <!-- شجرة العائلة -->
+  <div class="tree-container">
+    <div class="tree">
+      <div class="tree-row">
+        <div class="tree-box gray"><span class="box-icon">🐐🐐</span><div class="box-label">نواة عربي خالص<br/>(2–3 إناث دائمة)</div></div>
+        <div style="font-size:24px;color:#666;padding:0 4px;">✕</div>
+        <div class="tree-box gray"><span class="box-icon">🐐♂</span><div class="box-label">فحل دمشقي</div></div>
+      </div>
+      <div class="tree-arrow">⬇️</div>
+      <div class="tree-row">
+        <div class="tree-box blue"><span class="box-icon">🐐✨</span><div class="box-label">إناث F1<br/>(50% دمشقي)</div></div>
+      </div>
+      <div class="tree-arrow">⬇️ تنقسم إلى خطّين</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:4px;">
+        <!-- أزرق -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <div class="tree-box blue" style="width:100%;"><span class="box-icon">🔵</span><div class="box-label">أفضل الإناث<br/>خط الأمهات</div></div>
+          <div class="tree-arrow" style="font-size:20px;">⬇️</div>
+          <div class="tree-box blue" style="width:100%;"><span class="box-icon" style="font-size:18px;">🔄</span><div class="box-label">دوران: عربي/دمشقي<br/>بالتناوب</div></div>
+          <div class="tree-arrow" style="font-size:20px;">⬇️</div>
+          <div class="tree-box green" style="width:100%;"><span class="box-icon">💪</span><div class="box-label">بدائل صلبة<br/>دائمة للأبد</div></div>
+        </div>
+        <!-- برتقالي -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <div class="tree-box orange" style="width:100%;"><span class="box-icon">🟠</span><div class="box-label">الفائض<br/>خط اللحم</div></div>
+          <div class="tree-arrow" style="font-size:20px;">⬇️</div>
+          <div class="tree-box orange" style="width:100%;"><span class="box-icon" style="font-size:18px;">✕ فحل بور</span></div>
+          <div class="tree-arrow" style="font-size:20px;">⬇️</div>
+          <div class="tree-box red" style="width:100%;"><span class="box-icon">🥩</span><div class="box-label">كل النتاج<br/>يُباع</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-blue">
+    <div class="sub-title">🔵 الخط الأول: مصنع الأمهات</div>
+    <ul>
+      <li>🔵 يبقى قريباً من العربي = صلابة دائمة</li>
+      <li>🔵 الدوران الثنائي: تلقيح بالتناوب بين دمشقي وعربي</li>
+      <li>🔵 نسبة الدم الدمشقي تتأرجح بين الثلث والثلثين</li>
+      <li>🔵 لا تصل 100% لأي عرق = قوة الهجين محفوظة للأبد</li>
+    </ul>
+  </div>
+
+  <div class="card-orange">
+    <div class="sub-title">🟠 الخط الثاني: خط اللحم التجاري</div>
+    <ul>
+      <li>🟠 الإناث الهجينة الفائضة تنتقل هنا</li>
+      <li>🟠 تُلقَّح بفحل بور (Boer)</li>
+      <li>🥩 كل النتاج ذكوراً وإناثاً يُباع للذبح</li>
+    </ul>
+  </div>
+
+  <div class="big-warning">
+    <div class="warn-icon">🔴</div>
+    <div class="warn-text">القاعدة الذهبية</div>
+    <p style="font-size:21px;font-weight:700;margin-top:8px;color:#c62828;">لا يُلقّح أي فحل بناتِه أبداً!</p>
+    <p style="font-size:18px;margin-top:8px;color:#333;">اشترِ فحلاً جديداً غير قريب كل 2–3 سنوات من مزرعة مختلفة</p>
+  </div>
+</div>
+
+<!-- ===== القسم 3: الدورة ===== -->
+<div id="screen-cycle" class="screen">
+  <div class="section-title">⏱️ الدورة والمواعيد</div>
+  <button class="listen-btn" onclick="speak('مدة الحمل مئة وخمسون يوماً أي خمسة أشهر. الأنثى تُلقَّح فقط حين تبلغ وزن ثلاثين إلى خمسة وثلاثين كيلوغراماً. الدورة المكثفة ثلاث ولادات كل سنتين.')">🔊 استمع</button>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+    <div class="card" style="text-align:center;border:3px solid #42a5f5;">
+      <div style="font-size:44px;">⏳</div>
+      <div style="font-size:34px;font-weight:900;color:#1565c0;">150</div>
+      <div style="font-size:17px;font-weight:700;">يوماً</div>
+      <div style="font-size:14px;color:#666;">مدة الحمل (5 أشهر)</div>
+    </div>
+    <div class="card" style="text-align:center;border:3px solid #66bb6a;">
+      <div style="font-size:44px;">⚖️</div>
+      <div style="font-size:28px;font-weight:900;color:#2e7d32;">30–35</div>
+      <div style="font-size:17px;font-weight:700;">كيلوغرام</div>
+      <div style="font-size:14px;color:#666;">وزن التلقيح (ليس العمر!)</div>
+    </div>
+    <div class="card" style="text-align:center;border:3px solid #ff9800;">
+      <div style="font-size:44px;">🍼</div>
+      <div style="font-size:34px;font-weight:900;color:#e65100;">60</div>
+      <div style="font-size:17px;font-weight:700;">يوماً</div>
+      <div style="font-size:14px;color:#666;">الفطام الإجباري</div>
+    </div>
+    <div class="card" style="text-align:center;border:3px solid #ab47bc;">
+      <div style="font-size:44px;">🔁</div>
+      <div style="font-size:34px;font-weight:900;color:#7b1fa2;">3</div>
+      <div style="font-size:17px;font-weight:700;">ولادات</div>
+      <div style="font-size:14px;color:#666;">كل سنتين</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sub-title">🔁 دورة 8 أشهر</div>
+    <div class="cycle-flow">
+      <div class="cycle-box hl">🐐 تلقيح</div>
+      <div class="cycle-arrow">⬇️ 150 يوم</div>
+      <div class="cycle-box hl">🍼 ولادة</div>
+      <div class="cycle-arrow">⬇️ 60 يوم</div>
+      <div class="cycle-box hl">🛑 فطام إجباري</div>
+      <div class="cycle-arrow">⬇️ 15–30 يوم</div>
+      <div class="cycle-box hl">🌱 علف دفع (Flushing)</div>
+      <div class="cycle-arrow">⬇️</div>
+      <div class="cycle-box" style="background:#e8f5e9;border-color:#4caf50;">🔄 تلقيح جديد</div>
+    </div>
+  </div>
+
+  <div class="card-yellow">
+    <div class="sub-title">🛡️ بوّابة الأمان</div>
+    <p>كل أمّ عربية تدخل النظام المكثف فقط بعد أن تُثبت:</p>
+    <p style="font-size:22px;font-weight:700;margin-top:8px;">✅ ربّت بطنها الأول دون أن تهزل</p>
+    <p style="font-size:19px;color:#b8860b;">⚖️ حالة جسمها فوق 2.5 من 5</p>
+    <div class="divider"></div>
+    <p>🔴 الأم التي لم تجتز الاختبار تبقى على <strong>ولادة واحدة في السنة</strong> حتى تستعيد قوتها</p>
+  </div>
+
+  <div class="card">
+    <div class="sub-title">📊 مراقبة حالة الجسم (BCS)</div>
+    <p style="margin-bottom:12px;">اجسّ ظهر الأمّ أسبوعياً 🖐️</p>
+    <div class="bcs-container">
+      <div class="bcs-card" style="background:#ffcdd2;border:2px solid #e53935;">
+        <svg width="80" height="56" viewBox="0 0 80 56">
+          <path d="M10 35 Q25 20 40 22 Q55 20 70 35" stroke="#e53935" stroke-width="3" fill="none"/>
+          <circle cx="25" cy="23" r="4" fill="#e53935"/><circle cx="40" cy="21" r="4" fill="#e53935"/><circle cx="55" cy="23" r="4" fill="#e53935"/>
+          <text x="40" y="52" text-anchor="middle" font-size="10" fill="#c62828" font-family="Cairo">هزيلة جداً</text>
+        </svg>
+        <div class="bcs-score" style="color:#c62828;">1</div><div class="bcs-label" style="color:#c62828;">خطر 🔴</div>
+      </div>
+      <div class="bcs-card" style="background:#ffcdd2;border:2px solid #e53935;">
+        <svg width="80" height="56" viewBox="0 0 80 56">
+          <path d="M10 37 Q25 24 40 25 Q55 24 70 37" stroke="#e53935" stroke-width="3" fill="none"/>
+          <circle cx="25" cy="26" r="3" fill="#e53935"/><circle cx="40" cy="24" r="3" fill="#e53935"/><circle cx="55" cy="26" r="3" fill="#e53935"/>
+          <text x="40" y="52" text-anchor="middle" font-size="10" fill="#c62828" font-family="Cairo">هزيلة</text>
+        </svg>
+        <div class="bcs-score" style="color:#c62828;">2</div><div class="bcs-label" style="color:#c62828;">انتبه 🔴</div>
+      </div>
+      <div class="bcs-card" style="background:#fff9c4;border:2px solid #f9a825;">
+        <svg width="80" height="56" viewBox="0 0 80 56">
+          <path d="M10 38 Q25 28 40 29 Q55 28 70 38" stroke="#f9a825" stroke-width="3" fill="none"/>
+          <ellipse cx="25" cy="29" rx="3" ry="2" fill="#f9a825"/><ellipse cx="40" cy="28" rx="3" ry="2" fill="#f9a825"/><ellipse cx="55" cy="29" rx="3" ry="2" fill="#f9a825"/>
+          <text x="40" y="52" text-anchor="middle" font-size="10" fill="#b8860b" font-family="Cairo">الحدّ الأدنى</text>
+        </svg>
+        <div class="bcs-score" style="color:#b8860b;">2.5</div><div class="bcs-label" style="color:#b8860b;">الحدّ ⚠️</div>
+      </div>
+      <div class="bcs-card" style="background:#c8e6c9;border:2px solid #4caf50;">
+        <svg width="80" height="56" viewBox="0 0 80 56">
+          <path d="M10 38 Q25 32 40 33 Q55 32 70 38" stroke="#4caf50" stroke-width="3" fill="none"/>
+          <rect x="22" y="30" width="6" height="6" rx="3" fill="#4caf50"/><rect x="37" y="29" width="6" height="6" rx="3" fill="#4caf50"/><rect x="52" y="30" width="6" height="6" rx="3" fill="#4caf50"/>
+          <text x="40" y="52" text-anchor="middle" font-size="10" fill="#2e7d32" font-family="Cairo">جيدة</text>
+        </svg>
+        <div class="bcs-score" style="color:#2e7d32;">3</div><div class="bcs-label" style="color:#2e7d32;">سليمة ✅</div>
+      </div>
+      <div class="bcs-card" style="background:#c8e6c9;border:2px solid #4caf50;">
+        <svg width="80" height="56" viewBox="0 0 80 56">
+          <path d="M10 40 Q25 36 40 37 Q55 36 70 40" stroke="#4caf50" stroke-width="3" fill="none"/>
+          <rect x="21" y="33" width="8" height="8" rx="4" fill="#4caf50"/><rect x="36" y="32" width="8" height="8" rx="4" fill="#4caf50"/><rect x="51" y="33" width="8" height="8" rx="4" fill="#4caf50"/>
+          <text x="40" y="52" text-anchor="middle" font-size="10" fill="#2e7d32" font-family="Cairo">ممتازة</text>
+        </svg>
+        <div class="bcs-score" style="color:#2e7d32;">4</div><div class="bcs-label" style="color:#2e7d32;">ممتاز ✅</div>
+      </div>
+    </div>
+    <div class="card-yellow" style="margin-top:14px;margin-bottom:0;">
+      <p>🖐️ ضع يدك على ظهر الأمّ — إذا حسست العظام واضحة وحادة → تحت 2.5 → عزل وتسمين فوري</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== القسم 4: التغذية ===== -->
+<div id="screen-feeding" class="screen">
+  <div class="section-title">🌾 التغذية والماء</div>
+  <button class="listen-btn" onclick="speak('الفصة تعطي البروتين لكنها لا تغني عن الشعير. ماء البئر بملوحة 2.8 غرام آمن للماعز البالغ. احذف ملح الطعام من العلف لأن ماء البئر مالح أصلاً.')">🔊 استمع</button>
+
+  <div class="card-green">
+    <div class="sub-title">🌱 الأرض والفصة القابسية</div>
+    <ul>
+      <li>✅ فصة قابسية = صنف صبور على الملوحة — اختيار صحيح</li>
+      <li>✅ تعطي البروتين أساساً للحيوانات</li>
+      <li>⚠️ لا تغني وحدها — تحتاج شعيراً للطاقة</li>
+      <li>📊 التوقع الواقعي: <strong>8–12 طناً/سنة</strong></li>
+    </ul>
+  </div>
+
+  <div class="card-blue">
+    <div class="sub-title">💧 ماء البئر (ملوحة 2.8 غ/ل)</div>
+    <ul>
+      <li>✅ آمن للماعز البالغ — يتحمّل الملوحة جيداً</li>
+      <li>⚠️ الجداء الصغيرة: خفّف الماء إن ظهر إسهال أو عزوف</li>
+      <li>🔴 وفّر ماءً نظيفاً دائماً بلا تقنين — خصوصاً الأم المرضعة في الصيف</li>
+    </ul>
+    <div class="card-yellow" style="margin-top:10px;margin-bottom:0;">
+      <p>⚠️ للريّ: ريّ غسيل دوري إلزامي لدفع الملح تحت الجذور</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sub-title">🥣 خلطة العلف المركّز (لكل 100 كغ)</div>
+    <div class="feed-grid">
+      <div class="feed-card"><div class="feed-icon">🌾</div><div class="feed-name">شعير مجروش</div><div class="feed-amount">60</div><div class="feed-unit">كغ — الطاقة</div></div>
+      <div class="feed-card"><div class="feed-icon">🌰</div><div class="feed-name">نخالة قمح</div><div class="feed-amount">20</div><div class="feed-unit">كغ — سُدّاري</div></div>
+      <div class="feed-card"><div class="feed-icon">🫘</div><div class="feed-name">كسب صويا</div><div class="feed-amount">15</div><div class="feed-unit">كغ — بروتين</div></div>
+      <div class="feed-card"><div class="feed-icon">🦴</div><div class="feed-name">مسحوق كالسيوم</div><div class="feed-amount">3</div><div class="feed-unit">كغ</div></div>
+      <div class="feed-card" style="grid-column:span 2;"><div class="feed-icon">💊</div><div class="feed-name">أملاح وفيتامينات CMV</div><div class="feed-amount">1.5</div><div class="feed-unit">كغ — خاصة بالماعز</div></div>
+    </div>
+    <div class="card-red" style="margin-top:14px;margin-bottom:0;">
+      <p>🔴 <strong>ملح الطعام: احذفه تماماً!</strong> ماء البئر مالح أصلاً — الإضافة تُجهد الكلى</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sub-title">📅 التغذية حسب المرحلة</div>
+    <div class="card-blue" style="margin-bottom:10px;"><div class="sub-title" style="font-size:18px;">🌿 الصيانة / الحمل المبكر</div><p>رعي + دريس فصة حرّ — مركّز شبه صفر</p></div>
+    <div class="card-yellow" style="margin-bottom:10px;"><div class="sub-title" style="font-size:18px;">🚀 علف الدفع (Flushing)</div><p>قبل الفحل وبعده 15 يوماً</p><p style="font-size:22px;font-weight:900;color:#b8860b;">300–400 غ / رأس / يوم</p></div>
+    <div class="card-orange" style="margin-bottom:10px;"><div class="sub-title" style="font-size:18px;">🤰 الحمل المتأخر (آخر 45 يوماً)</div><p style="font-size:22px;font-weight:900;color:#e65100;">400–500 غ / رأس</p><p>+ دريس فصة جيد</p></div>
+    <div class="card-green" style="margin-bottom:10px;"><div class="sub-title" style="font-size:18px;">🍼 الرضاعة (60 يوماً)</div><p style="font-size:22px;font-weight:900;color:#1a7a1a;">500–700 غ / رأس</p><p>+ فصة بأقصى ما تأكل</p></div>
+    <div class="card-yellow" style="margin-bottom:10px;">
+      <div class="sub-title" style="font-size:18px;">♂ الفحل</div>
+      <p>دريس فصة + قرط — مركّز محدود جداً</p>
+      <div class="card-red" style="margin-top:8px;margin-bottom:0;"><p>🔴 الإفراط في الشعير للفحل يسبّب <strong>حصى المجاري البولية القاتلة!</strong></p></div>
+    </div>
+    <div class="card-green"><div class="sub-title" style="font-size:18px;">🥩 جداء التسمين</div><p>فصة + شعير مكثّف — البروتين للعضل، الشعير للوزن</p></div>
+  </div>
+
+  <div class="sub-title">⚠️ ثلاث قواعد صارمة</div>
+  <div class="card-yellow"><div class="sub-title" style="font-size:18px;">💨 خطر النفاخ</div><p>🚫 لا تُطلق حيواناً جائعاً على فصة خضراء أو مبلّلة بالندى</p><p>✅ ذبّلها أو قدّمها دريساً وأدخلها تدريجياً</p></div>
+  <div class="card-yellow"><div class="sub-title" style="font-size:18px;">⚖️ لا فصة خالصة أبداً</div><p>اخلطها دائماً بألياف جافة (تبن/قرط) لتوازن الكرش</p></div>
+  <div class="card-yellow"><div class="sub-title" style="font-size:18px;">📈 التدرّج في المركّز</div><p>ابدأ بـ<strong>50 غراماً</strong> وارفع تدريجياً خلال أسبوع — الشعير مجروش خشناً لا مطحوناً</p></div>
+</div>
+
+<!-- ===== القسم 5: القواعد ===== -->
+<div id="screen-rules" class="screen">
+  <div class="section-title">✅⛔ التوصيات والتحذيرات</div>
+  <button class="listen-btn" onclick="speak('ابدأ بخمس إناث عربي وفحل دمشقي واحد. لا تتجاوز خمسة وثلاثين رأساً في الزريبة. الفطام الإجباري عند ستين يوماً. لا تشترِ قطيعاً دمشقياً خالصاً. لا يلقّح فحل بناته أبداً.')">🔊 استمع</button>
+
+  <div class="sub-title" style="color:var(--green);">✅ التوصيات</div>
+  <div class="card-green"><li>✅ ابدأ بـ<strong>5 إناث عربي + فحل دمشقي واحد</strong></li></div>
+  <div class="card-green"><li>✅ سقف الزريبة الآمن: <strong>30–40 رأساً</strong> — لا تتجاوز 35 أبداً</li><li style="font-size:17px;color:#555;margin-top:4px;">الازدحام يسبّب الأمونيا والأمراض التنفسية</li></div>
+  <div class="card-green"><li>✅ فطام إجباري عند <strong>60 يوماً بالضبط</strong></li></div>
+  <div class="card-green"><li>✅ مراقبة <strong>BCS أسبوعياً</strong> + تسجيل يومي</li></div>
+  <div class="card-green"><li>✅ احتفظ دائماً بـ<strong>نواة عربي خالص</strong> للتأمين الوراثي</li></div>
+
+  <div class="divider"></div>
+  <div class="sub-title" style="color:var(--red);">⛔ الموانع والتحذيرات</div>
+  <div class="card-red"><li>🔴 لا تربِّ قطيعاً دمشقياً خالصاً — هشّ مناخياً وباهظ التكلفة</li></div>
+  <div class="card-red"><li>🔴 لا يُلقّح فحل بناتِه أبداً</li></div>
+  <div class="card-red">
+    <li>🔴 لا تُدخل حيواناً جديداً دون حجر صحي <strong>3–4 أسابيع</strong> منفصلاً + تحاليل دم</li>
+    <li style="font-size:17px;color:#c62828;margin-top:4px;">📋 التحاليل: CAE + البروسيلّا + الجرب</li>
+    <li style="font-size:17px;color:#c62828;margin-top:4px;">⚠️ الفحل الجديد = أخطر بوابة دخول للمرض</li>
+  </div>
+  <div class="card-red"><li>🔴 لا تشترِ فحل البور مبكراً — انتظر السنة 2–3 حتى تنضج الإناث الهجينة</li></div>
+  <div class="card-red"><li>🔴 لا تترك الفحل المستورد في الشمس بلا ظل وماء بارد</li></div>
+  <div class="card-red"><li>🔴 لا تُلقّح أنثى تحت <strong>30 كيلوغراماً</strong></li></div>
+</div>
+
+<!-- ===== القسم 6: التسجيل ===== -->
+<div id="screen-register" class="screen">
+  <div id="register-wizard"></div>
+  <div id="register-main"></div>
+</div>
+
+<script>
+// ===== البيانات =====
+var farm = { name:'', location:'منزل بوزيان، سيدي بوزيد', animals:[] };
+var setupDone = false, setupStep = 0, tempSetup = {};
+var addStep = 0, tempAnimal = {}, editIdx = -1;
+
+// ===== تنقل =====
+var TITLES = {
+  home:     '🐐 مزرعة الماعز — منزل بوزيان',
+  breeds:   '🐐 أنواع الماعز',
+  breeding: '🧬 التهجين والأجيال',
+  cycle:    '⏱️ الدورة والمواعيد',
+  feeding:  '🌾 التغذية والماء',
+  rules:    '✅⛔ التوصيات والتحذيرات',
+  register: '📝 سجّل قطيعي'
+};
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('screen-' + id).classList.add('active');
+  document.getElementById('back-btn').style.display = 'flex';
+  document.getElementById('header-title').textContent = TITLES[id] || '';
+  window.scrollTo(0, 0);
+  if (id === 'register') renderRegister();
+}
+
+function goHome() {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('screen-home').classList.add('active');
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('header-title').textContent = TITLES.home;
+  stopSpeech();
+}
+
+// ===== استمع =====
+function speak(txt) {
+  if (!window.speechSynthesis) return;
+  stopSpeech();
+  var u = new SpeechSynthesisUtterance(txt);
+  u.lang = 'ar'; u.rate = 0.85;
+  window.speechSynthesis.speak(u);
+}
+function stopSpeech() { if (window.speechSynthesis) window.speechSynthesis.cancel(); }
+
+// ===== تواريخ =====
+function addDays(str, n) {
+  if (!str) return '';
+  var d = new Date(str);
+  if (isNaN(d)) return '';
+  d.setDate(d.getDate() + n);
+  return d.toLocaleDateString('ar', {year:'numeric',month:'long',day:'numeric'});
+}
+function fmtDate(str) {
+  if (!str) return '—';
+  var d = new Date(str);
+  return isNaN(d) ? str : d.toLocaleDateString('ar', {year:'numeric',month:'long',day:'numeric'});
+}
+
+// ===== رسم التسجيل =====
+function renderRegister() {
+  if (!setupDone) { renderSetup(); return; }
+
+  var females = farm.animals.filter(function(a){ return a.gender==='أنثى'; }).length;
+  var males   = farm.animals.filter(function(a){ return a.gender==='ذكر';  }).length;
+
+  var html = '<div class="success-box"><div style="font-size:38px;">🏡</div>'
+    + '<div style="font-size:22px;font-weight:700;">' + (farm.name||'مزرعتي') + '</div>'
+    + '<div style="font-size:15px;color:#555;">' + farm.location + '</div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    + '<div class="card" style="text-align:center;border:2px solid #4caf50;"><div style="font-size:34px;">🐐</div>'
+    + '<div style="font-size:26px;font-weight:900;">' + females + '</div><div style="font-size:16px;">إناث</div></div>'
+    + '<div class="card" style="text-align:center;border:2px solid #1976d2;"><div style="font-size:34px;">🐐♂</div>'
+    + '<div style="font-size:26px;font-weight:900;">' + males + '</div><div style="font-size:16px;">فحول</div></div></div>'
+    + '<button class="btn-primary" onclick="showAdd(-1)">➕ أضف حيواناً جديداً</button>'
+    + '<button class="btn-secondary" onclick="exportData()" style="margin-top:8px;">📤 تصدير بياناتي</button>'
+    + '<div id="export-area" class="export-area"></div>'
+    + '<div style="margin-top:22px;"><div class="sub-title">📋 قائمة الحيوانات</div>';
+
+  if (farm.animals.length === 0) {
+    html += '<div class="empty-state"><div class="e-icon">🐐</div><p>لا يوجد حيوانات بعد<br/>اضغط على زر الإضافة</p></div>';
+  } else {
+    farm.animals.forEach(function(a, i) {
+      var bcs = parseFloat(a.bcs) || 0;
+      var cls = bcs >= 3 ? 'healthy' : bcs >= 2.5 ? 'warning' : 'danger';
+      var rem = a.matingDate
+        ? '<div class="reminder-box">📅 الولادة المتوقّعة: <strong>' + addDays(a.matingDate,150) + '</strong><br/>🍼 موعد الفطام: <strong>' + addDays(a.matingDate,210) + '</strong></div>' : '';
+      var bw = (bcs > 0 && bcs < 2.5)
+        ? '<div class="bcs-warn">⚠️ تحذير: BCS منخفض (' + bcs + ') — عزل وتسمين فوري!</div>' : '';
+      html += '<div class="animal-card ' + cls + '">'
+        + '<div class="animal-header"><div class="animal-id">' + (a.id||'ب'+(i+1)) + '</div>'
+        + '<div class="animal-badge">' + (a.breed||'') + ' ' + (a.gender||'') + '</div></div>'
+        + '<div class="animal-info">'
+        + '<div><span class="info-label">الأم</span><br/><span class="info-value">' + (a.mother||'—') + '</span></div>'
+        + '<div><span class="info-label">الأب</span><br/><span class="info-value">' + (a.father||'—') + '</span></div>'
+        + '<div><span class="info-label">مزرعة الفحل</span><br/><span class="info-value">' + (a.fatherFarm||'—') + '</span></div>'
+        + '<div><span class="info-label">الميلاد</span><br/><span class="info-value">' + fmtDate(a.birthDate) + '</span></div>'
+        + '<div><span class="info-label">الوزن</span><br/><span class="info-value">' + (a.weight ? a.weight+' كغ' : '—') + '</span></div>'
+        + '<div><span class="info-label">BCS</span><br/><span class="info-value">' + (a.bcs||'—') + '/5</span></div>'
+        + '<div style="grid-column:span 2;"><span class="info-label">الحالة</span><br/><span class="info-value">' + (a.status||'—') + '</span></div>'
+        + '</div>' + rem + bw
+        + '<div style="display:flex;gap:8px;margin-top:10px;">'
+        + '<button class="btn-danger" onclick="delAnimal(' + i + ')" style="flex:1;">🗑️ حذف</button>'
+        + '<button onclick="showAdd(' + i + ')" style="flex:2;background:#e3f2fd;color:#1565c0;border:2px solid #1976d2;border-radius:10px;padding:11px;font-size:17px;font-family:Cairo,sans-serif;cursor:pointer;">✏️ تعديل</button>'
+        + '</div></div>';
+    });
+  }
+
+  html += '</div>';
+  document.getElementById('register-wizard').innerHTML = '';
+  document.getElementById('register-wizard').style.display = 'none';
+  document.getElementById('register-main').innerHTML = html;
+  document.getElementById('register-main').style.display = 'block';
+}
+
+// ===== إعداد المزرعة =====
+var SETUP_STEPS = [
+  { q:'🏡 ما اسم مزرعتك أو اسمك؟',     field:'name',          type:'text',   ph:'مثال: مزرعة الحاج علي',          def:'' },
+  { q:'📍 ما موقع مزرعتك؟',             field:'location',      type:'text',   ph:'منزل بوزيان، سيدي بوزيد',        def:'منزل بوزيان، سيدي بوزيد' },
+  { q:'🐐 كم عدد الإناث عندك؟',         field:'femaleCount',   type:'number', ph:'5',                               def:'5' },
+  { q:'🐐♂ كم عدد الفحول؟',            field:'maleCount',     type:'number', ph:'1',                               def:'1' },
+  { q:'🧬 نوع الفحل الرئيسي؟',          field:'mainBreed',     type:'select', opts:['دمشقي (شامي)','عربي بلدي','بور (Boer)'] }
+];
+
+function renderSetup() {
+  setupStep = 0; tempSetup = {};
+  document.getElementById('register-main').style.display = 'none';
+  showSetupStep();
+}
+
+function showSetupStep() {
+  var wiz = document.getElementById('register-wizard');
+  wiz.style.display = 'block';
+  if (setupStep >= SETUP_STEPS.length) {
+    farm.name     = tempSetup.name     || 'مزرعتي';
+    farm.location = tempSetup.location || 'منزل بوزيان، سيدي بوزيد';
+    setupDone = true;
+    renderRegister();
+    return;
+  }
+  var s    = SETUP_STEPS[setupStep];
+  var dots = SETUP_STEPS.map(function(_,i){ return '<div class="step-dot ' + (i<setupStep?'done':i===setupStep?'active':'') + '"></div>'; }).join('');
+  var inp  = s.type === 'select'
+    ? '<select class="form-select" id="si">' + s.opts.map(function(o){ return '<option>'+o+'</option>'; }).join('') + '</select>'
+    : '<input class="form-input" id="si" type="' + s.type + '" placeholder="' + (s.ph||'') + '" value="' + (tempSetup[s.field]||s.def||'') + '" />';
+  wiz.innerHTML = '<div class="step-indicator">' + dots + '</div>'
+    + '<div class="form-card"><div class="form-question">' + s.q + '</div>' + inp
+    + '<button class="btn-primary" onclick="nextSetup(\'' + s.field + '\')">التالي ⬅️</button>'
+    + (setupStep > 0 ? '<button class="btn-secondary" onclick="prevSetup()">← السابق</button>' : '')
+    + '</div>';
+  var el = document.getElementById('si');
+  if (el && s.type !== 'select') { setTimeout(function(){ el.focus(); }, 80); el.onkeydown = function(e){ if(e.key==='Enter') nextSetup(s.field); }; }
+}
+function nextSetup(f) { var v = document.getElementById('si'); tempSetup[f] = v ? v.value.trim() : ''; setupStep++; showSetupStep(); }
+function prevSetup()  { if (setupStep > 0) { setupStep--; showSetupStep(); } }
+
+// ===== إضافة/تعديل حيوان =====
+var ADD_STEPS = [
+  { q:'🔢 رقم أو رمز الحيوان',              field:'id',         type:'text',   ph:'مثال: أ1 أو ب3' },
+  { q:'♀♂ الجنس؟',                          field:'gender',     type:'select', opts:['أنثى','ذكر','جدي/جدية'] },
+  { q:'🐐 نوع السلالة',                      field:'breed',      type:'select', opts:['عربي بلدي','دمشقي (شامي)','بور (Boer)','هجين F1','هجين F2','غير معروف'] },
+  { q:'🐐 رقم الأمّ',                        field:'mother',     type:'text',   ph:'رقم الأمّ أو "غير معروف"' },
+  { q:'🐐♂ رقم الأب',                       field:'father',     type:'text',   ph:'رقم الأب أو "غير معروف"' },
+  { q:'🏠 مزرعة مصدر الفحل',               field:'fatherFarm', type:'text',   ph:'اسم المزرعة التي اشتريت منها الفحل', note:'yellow' },
+  { q:'📅 تاريخ الميلاد',                    field:'birthDate',  type:'date',   ph:'', skip:true },
+  { q:'⚖️ الوزن الحالي (كغ)',                field:'weight',     type:'number', ph:'مثال: 32' },
+  { q:'📊 حالة الجسم BCS (1–5)',             field:'bcs',        type:'select', opts:['1','1.5','2','2.5','3','3.5','4','4.5','5'] },
+  { q:'📋 الحالة الحالية',                   field:'status',     type:'select', opts:['فارغة / صيانة','حامل','مرضعة','علف دفع / انتظار التلقيح','للبيع / تسمين','حجر صحي'] },
+  { q:'💑 تاريخ آخر تلقيح',                  field:'matingDate', type:'date',   ph:'', skip:true, note:'blue' }
+];
+
+function showAdd(idx) {
+  editIdx = idx;
+  addStep = 0;
+  tempAnimal = idx >= 0 ? Object.assign({}, farm.animals[idx]) : {};
+  document.getElementById('register-main').style.display = 'none';
+  showAddStep();
+}
+
+function showAddStep() {
+  var wiz = document.getElementById('register-wizard');
+  wiz.style.display = 'block';
+  if (addStep >= ADD_STEPS.length) {
+    // تحقق من تكرار مزرعة الفحل
+    var ff = tempAnimal.fatherFarm || '';
+    var farms = farm.animals.filter(function(_,i){ return i !== editIdx; }).map(function(a){ return a.fatherFarm; }).filter(function(f){ return f && f.length > 2; });
+    if (editIdx >= 0) farm.animals[editIdx] = Object.assign({}, tempAnimal);
+    else farm.animals.push(Object.assign({}, tempAnimal));
+    setupDone = true;
+    renderRegister();
+    if (ff && ff !== 'غير معروف' && farms.indexOf(ff) >= 0) {
+      setTimeout(function(){ alert('⚠️ تنبيه: سبق الشراء من هذه المزرعة (' + ff + '). تأكد أن الفحل الجديد غير قريب من الفحل السابق!'); }, 300);
+    }
+    return;
+  }
+  var s    = ADD_STEPS[addStep];
+  var total = ADD_STEPS.length;
+  var dots = ADD_STEPS.map(function(_,i){ return '<div class="step-dot ' + (i<addStep?'done':i===addStep?'active':'') + '"></div>'; }).join('');
+
+  var noteHtml = '';
+  if (s.note === 'yellow') noteHtml = '<div class="card-yellow" style="margin-bottom:10px;"><p>⚠️ مهم: سجّل اسم المزرعة بدقة — سيتم تنبيهك إن اشتريت من نفس المزرعة مرة ثانية.</p></div>';
+  if (s.note === 'blue')   noteHtml = '<div class="card-blue" style="margin-bottom:10px;"><p>📅 عند التسجيل يُحسب موعد الولادة (+150 يوم) والفطام (+210 يوم) تلقائياً</p></div>';
+
+  var cur = tempAnimal[s.field] || '';
+  var inp = s.type === 'select'
+    ? '<select class="form-select" id="ai">' + s.opts.map(function(o){ return '<option value="'+o+'"'+(o===cur?' selected':'')+'>' + o + '</option>'; }).join('') + '</select>'
+    : '<input class="form-input" id="ai" type="' + s.type + '" placeholder="' + (s.ph||'') + '" value="' + cur + '" />';
+
+  wiz.innerHTML = '<div class="step-indicator">' + dots + '</div>'
+    + '<div class="form-card"><div class="form-question">' + s.q + '</div>'
+    + noteHtml + inp
+    + (s.skip ? '<button class="btn-secondary" onclick="skipAdd()">تخطّ ⬅️</button>' : '')
+    + '<button class="btn-primary" onclick="nextAdd(\'' + s.field + '\')">التالي ⬅️</button>'
+    + (addStep > 0 ? '<button class="btn-secondary" onclick="prevAdd()">← السابق</button>' : '')
+    + '<button class="btn-secondary" onclick="cancelAdd()">إلغاء ✕</button>'
+    + '</div>';
+
+  var el = document.getElementById('ai');
+  if (el && s.type !== 'select' && s.type !== 'date') { setTimeout(function(){ el.focus(); },80); el.onkeydown = function(e){ if(e.key==='Enter') nextAdd(s.field); }; }
+}
+
+function nextAdd(f)  { var v = document.getElementById('ai'); tempAnimal[f] = v ? v.value.trim() : ''; addStep++; showAddStep(); }
+function skipAdd()   { addStep++; showAddStep(); }
+function prevAdd()   { if (addStep > 0) { addStep--; showAddStep(); } }
+function cancelAdd() { renderRegister(); }
+
+function delAnimal(i) {
+  if (confirm('هل تريد حذف هذا الحيوان؟')) { farm.animals.splice(i, 1); renderRegister(); }
+}
+
+// ===== تصدير =====
+function exportData() {
+  var t = '=== ملف قطيع الماعز ===\n'
+    + 'المزرعة: ' + farm.name + '\nالموقع: ' + farm.location
+    + '\nتاريخ التصدير: ' + new Date().toLocaleDateString('ar')
+    + '\nعدد الحيوانات: ' + farm.animals.length + '\n\n=== الحيوانات ===\n';
+  farm.animals.forEach(function(a, i) {
+    t += '\n--- حيوان ' + (i+1) + ' ---\n'
+      + 'الرقم: ' + (a.id||'—') + '\nالجنس: ' + (a.gender||'—')
+      + '\nالسلالة: ' + (a.breed||'—') + '\nالأمّ: ' + (a.mother||'—')
+      + '\nالأب: ' + (a.father||'—') + '\nمزرعة الفحل: ' + (a.fatherFarm||'—')
+      + '\nالميلاد: ' + fmtDate(a.birthDate) + '\nالوزن: ' + (a.weight ? a.weight+' كغ' : '—')
+      + '\nBCS: ' + (a.bcs||'—') + '/5\nالحالة: ' + (a.status||'—');
+    if (a.matingDate) t += '\nآخر تلقيح: ' + fmtDate(a.matingDate)
+      + '\nالولادة المتوقّعة: ' + addDays(a.matingDate,150)
+      + '\nموعد الفطام: ' + addDays(a.matingDate,210);
+    t += '\n';
+  });
+  var area = document.getElementById('export-area');
+  area.style.display = 'block';
+  area.textContent = t;
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(function(){ alert('✅ تم نسخ البيانات! يمكنك لصقها في واتساب أو أي تطبيق.'); }).catch(function(){});
+}
+</script>
+</body>
+</html>
