@@ -704,22 +704,87 @@ function calcBlood(id, byId, visited) {
   return result;
 }
 
-/* ===== معرّفات المحظورين ===== */
-function getForbiddenIds(a, allAnimals) {
-  var ids = {};
-  if (a.fatherId) ids[a.fatherId] = true;
-  if (a.motherId) ids[a.motherId] = true;
+/* ===== خريطة درجات القرابة الشاملة (كل الأجيال) ===== */
+function getKinshipMap(animalId, byId, allAnimals) {
+  var map = {};
+  var self = byId[animalId];
+  if (!self) return map;
+
+  /* ---- الأب ومنسوبوه ---- */
+  if (self.fatherId && byId[self.fatherId]) {
+    map[self.fatherId] = 'أب مباشر';
+    var father = byId[self.fatherId];
+    if (father.fatherId && byId[father.fatherId] && !map[father.fatherId]) map[father.fatherId] = 'جد للأب';
+    if (father.motherId && byId[father.motherId] && !map[father.motherId]) map[father.motherId] = 'جدة للأب';
+    var gff = father.fatherId ? byId[father.fatherId] : null;
+    if (gff) {
+      if (gff.fatherId && byId[gff.fatherId] && !map[gff.fatherId]) map[gff.fatherId] = 'جد الجد (أب)';
+      if (gff.motherId && byId[gff.motherId] && !map[gff.motherId]) map[gff.motherId] = 'جدة الجد (أب)';
+    }
+    var gfm = father.motherId ? byId[father.motherId] : null;
+    if (gfm) {
+      if (gfm.fatherId && byId[gfm.fatherId] && !map[gfm.fatherId]) map[gfm.fatherId] = 'جد الجدة (أب)';
+      if (gfm.motherId && byId[gfm.motherId] && !map[gfm.motherId]) map[gfm.motherId] = 'جدة الجدة (أب)';
+    }
+  }
+
+  /* ---- الأم ومنسوبوها ---- */
+  if (self.motherId && byId[self.motherId]) {
+    if (!map[self.motherId]) map[self.motherId] = 'أم مباشرة';
+    var mother = byId[self.motherId];
+    if (mother.fatherId && byId[mother.fatherId] && !map[mother.fatherId]) map[mother.fatherId] = 'جد للأم';
+    if (mother.motherId && byId[mother.motherId] && !map[mother.motherId]) map[mother.motherId] = 'جدة للأم';
+    var gmf = mother.fatherId ? byId[mother.fatherId] : null;
+    if (gmf) {
+      if (gmf.fatherId && byId[gmf.fatherId] && !map[gmf.fatherId]) map[gmf.fatherId] = 'جد الجد (أم)';
+      if (gmf.motherId && byId[gmf.motherId] && !map[gmf.motherId]) map[gmf.motherId] = 'جدة الجد (أم)';
+    }
+    var gmm = mother.motherId ? byId[mother.motherId] : null;
+    if (gmm) {
+      if (gmm.fatherId && byId[gmm.fatherId] && !map[gmm.fatherId]) map[gmm.fatherId] = 'جد الجدة (أم)';
+      if (gmm.motherId && byId[gmm.motherId] && !map[gmm.motherId]) map[gmm.motherId] = 'جدة الجدة (أم)';
+    }
+  }
+
+  /* ---- الإخوة (بدقة: شقيق / من الأب / من الأم) ---- */
   allAnimals.forEach(function(x) {
-    if (x.id === a.id) return;
-    if ((a.fatherId && x.fatherId === a.fatherId) || (a.motherId && x.motherId === a.motherId)) ids[x.id] = true;
-    if (x.fatherId === a.id || x.motherId === a.id) ids[x.id] = true;
+    if (x.id === animalId || map[x.id]) return;
+    var sameF = self.fatherId && x.fatherId === self.fatherId;
+    var sameM = self.motherId && x.motherId === self.motherId;
+    if (sameF && sameM)  map[x.id] = x.gender === 'أنثى' ? 'أخت شقيقة'   : 'أخ شقيق';
+    else if (sameF)      map[x.id] = x.gender === 'أنثى' ? 'أخت من الأب' : 'أخ من الأب';
+    else if (sameM)      map[x.id] = x.gender === 'أنثى' ? 'أخت من الأم' : 'أخ من الأم';
   });
-  return ids;
+
+  /* ---- الأبناء ---- */
+  allAnimals.forEach(function(x) {
+    if (x.id === animalId || map[x.id]) return;
+    if (x.fatherId === animalId || x.motherId === animalId)
+      map[x.id] = x.gender === 'أنثى' ? 'ابنة مباشرة' : 'ابن مباشر';
+  });
+
+  /* ---- الأحفاد ---- */
+  allAnimals.forEach(function(x) {
+    if (x.id === animalId || map[x.id]) return;
+    var fp = x.fatherId && map[x.fatherId];
+    var mp = x.motherId && map[x.motherId];
+    if ((fp && (fp.indexOf('ابن') === 0 || fp.indexOf('ابنة') === 0)) ||
+        (mp && (mp.indexOf('ابن') === 0 || mp.indexOf('ابنة') === 0)))
+      map[x.id] = x.gender === 'أنثى' ? 'حفيدة' : 'حفيد';
+  });
+
+  return map;
+}
+
+/* ===== معرّفات المحظورين (يعتمد على خريطة القرابة الشاملة) ===== */
+function getForbiddenIds(a, allAnimals) {
+  var byId = {};
+  allAnimals.forEach(function(x){ byId[x.id] = x; });
+  return getKinshipMap(a.id, byId, allAnimals);
 }
 
 /* ===== موصّل SVG ثابت النسب (25% أب — 75% أم) بدون أي حسابات يدوية ===== */
 function pedSvg() {
-  /* viewBox="0 0 200 24" + preserveAspectRatio="none" → الخطوط تتمدد بدقة مع عرض الجدول */
   return '<svg width="100%" height="24" viewBox="0 0 200 24" preserveAspectRatio="none" style="display:block;min-width:220px;">'
     + '<line x1="50"  y1="0"  x2="50"  y2="12" stroke="#7cb342" stroke-width="2.5"/>'
     + '<line x1="150" y1="0"  x2="150" y2="12" stroke="#7cb342" stroke-width="2.5"/>'
@@ -728,11 +793,12 @@ function pedSvg() {
     + '</svg>';
 }
 
-/* ===== بناء فرع عودي بجداول 50/50 محكمة (MAX_DEPTH=4) ===== */
-function buildBranch(id, fallbackName, role, depth, visited, forbiddenIds, byId) {
+/* ===== بناء فرع عودي بجداول 50/50 محكمة (MAX_DEPTH=4) مع عرض درجة القرابة داخل البطاقة ===== */
+function buildBranch(id, fallbackName, role, depth, visited, kinshipMap, byId) {
   var MAX_DEPTH = 4;
   var animal = id ? byId[id] : null;
-  var isForbidden = id && forbiddenIds[id];
+  var kinshipLabel = id && kinshipMap[id] ? kinshipMap[id] : '';
+  var isForbidden = !!kinshipLabel;
   var cls = 'unknown'; var icon = '?';
   var label = (fallbackName && fallbackName !== 'خارجي / غير معروف') ? escHtml(fallbackName) : (role || 'غير معروف');
   if (animal) {
@@ -742,6 +808,10 @@ function buildBranch(id, fallbackName, role, depth, visited, forbiddenIds, byId)
   }
   if (isForbidden) cls += ' forbidden';
   var forbiddenBadge = isForbidden ? '<span class="ped-forbidden-badge">&#x1F6AB;</span>' : '';
+  /* تحذير القرابة داخل البطاقة */
+  var kinshipHtml = kinshipLabel
+    ? '<div style="color:#c62828;font-size:9px;font-weight:700;margin-top:3px;border-top:1px solid #ef9a9a;padding-top:2px;">&#x1F6AB; ' + kinshipLabel + '</div>'
+    : '';
   var bloodHtml = '';
   if (animal && id) {
     var blood = calcBlood(id, byId, {});
@@ -756,13 +826,12 @@ function buildBranch(id, fallbackName, role, depth, visited, forbiddenIds, byId)
     var hasFather = (animal.fatherId && byId[animal.fatherId]) || (animal.fatherName && animal.fatherName !== 'خارجي / غير معروف');
     var hasMother = (animal.motherId && byId[animal.motherId]) || (animal.motherName && animal.motherName !== 'خارجي / غير معروف');
     if (hasFather || hasMother) {
-      /* جدول بخليتين متساويتين — الأب يسار، الأم يمين — مستقل عن اتجاه الصفحة */
       parentsHtml = '<div style="display:table;width:100%;direction:ltr;border-spacing:0;">'
         + '<div style="display:table-cell;width:50%;text-align:center;vertical-align:bottom;">'
-        + buildBranch(animal.fatherId, animal.fatherName, 'الأب', depth+1, v2, forbiddenIds, byId)
+        + buildBranch(animal.fatherId, animal.fatherName, 'الأب', depth+1, v2, kinshipMap, byId)
         + '</div>'
         + '<div style="display:table-cell;width:50%;text-align:center;vertical-align:bottom;">'
-        + buildBranch(animal.motherId, animal.motherName, 'الأم', depth+1, v2, forbiddenIds, byId)
+        + buildBranch(animal.motherId, animal.motherName, 'الأم', depth+1, v2, kinshipMap, byId)
         + '</div>'
         + '</div>'
         + pedSvg();
@@ -773,6 +842,7 @@ function buildBranch(id, fallbackName, role, depth, visited, forbiddenIds, byId)
     + '<div class="ped-node ' + cls + '" style="margin:0 auto;">'
     + forbiddenBadge + icon + ' ' + label
     + '<div class="pn-label">' + role + '</div>'
+    + kinshipHtml
     + bloodHtml + '</div></div>';
 }
 
@@ -783,15 +853,15 @@ function renderPedigreeTree(a, allAnimals) {
   var hasFather = a.fatherId || (a.fatherName && a.fatherName !== 'خارجي / غير معروف');
   var hasMother = a.motherId || (a.motherName && a.motherName !== 'خارجي / غير معروف');
   if (!hasFather && !hasMother) return '';
-  var forbiddenIds = getForbiddenIds(a, allAnimals);
+  var kinshipMap = getKinshipMap(a.id, byId, allAnimals);
   var blood = calcBlood(a.id, byId, {});
   var bloodParts = Object.keys(blood).filter(function(k){ return blood[k] >= 1; })
     .sort(function(x,y){ return blood[y]-blood[x]; })
     .map(function(k){ return Math.round(blood[k]) + '% ' + k; });
   var selfBloodHtml = bloodParts.length ? '<div class="ped-blood">' + bloodParts.join(' | ') + '</div>' : '';
   var initVisited = {}; initVisited[a.id] = true;
-  var fatherBranch = buildBranch(a.fatherId, a.fatherName, 'الأب', 0, initVisited, forbiddenIds, byId);
-  var motherBranch = buildBranch(a.motherId, a.motherName, 'الأم', 0, initVisited, forbiddenIds, byId);
+  var fatherBranch = buildBranch(a.fatherId, a.fatherName, 'الأب', 0, initVisited, kinshipMap, byId);
+  var motherBranch = buildBranch(a.motherId, a.motherName, 'الأم', 0, initVisited, kinshipMap, byId);
   return '<div class="pedigree-wrap">'
     + '<div class="pedigree-title"><i class="fa-solid fa-diagram-project"></i> شجرة الأنساب</div>'
     + '<div class="ped-scroll-wrap">'
@@ -806,87 +876,27 @@ function renderPedigreeTree(a, allAnimals) {
     + '</div></div></div>';
 }
 
-/* ===== استخراج جميع الأقارب (عودي من جميع الأجيال) ===== */
-function getAllRelatives(animalId, byId, allAnimals) {
-  var visited = {};
-  var result = [];
-  function walkUp(id) {
-    if (!id || visited[id]) return;
-    visited[id] = true;
-    result.push(id);
-    var a = byId[id];
-    if (!a) return;
-    walkUp(a.fatherId);
-    walkUp(a.motherId);
-    allAnimals.forEach(function(x) {
-      if (x.id === id || visited[x.id]) return;
-      if ((a.fatherId && x.fatherId === a.fatherId) || (a.motherId && x.motherId === a.motherId)) {
-        visited[x.id] = true; result.push(x.id);
-      }
-    });
-  }
-  function walkDown(id) {
-    if (!id) return;
-    allAnimals.forEach(function(x) {
-      if (visited[x.id]) return;
-      if (x.fatherId === id || x.motherId === id) {
-        visited[x.id] = true; result.push(x.id); walkDown(x.id);
-      }
-    });
-  }
-  var self = byId[animalId];
-  if (!self) return result;
-  visited[animalId] = true;
-  walkUp(self.fatherId);
-  walkUp(self.motherId);
-  if (self.fatherId || self.motherId) {
-    allAnimals.forEach(function(x) {
-      if (x.id === animalId || visited[x.id]) return;
-      if ((self.fatherId && x.fatherId === self.fatherId) || (self.motherId && x.motherId === self.motherId)) {
-        visited[x.id] = true; result.push(x.id);
-      }
-    });
-  }
-  walkDown(animalId);
-  return result;
-}
-
-/* ===== كشف زواج الأقارب — اسم وسلالة لكل فرد ===== */
+/* ===== كشف زواج الأقارب — اسم وسلالة ودرجة القرابة لكل فرد ===== */
 function getInbreedingWarnings(a, allAnimals) {
   var byId = {};
   allAnimals.forEach(function(x){ byId[x.id] = x; });
-  var added = {}; added[a.id] = true;
+  var kinshipMap = getKinshipMap(a.id, byId, allAnimals);
   var lines = [];
-  function forbidLine(x, relation) {
-    if (!x || added[x.id]) return;
-    added[x.id] = true;
-    lines.push('<div style="color:#b71c1c;font-size:12px;font-weight:700;margin-bottom:4px;padding:3px 0;">&#x1F6AB; يُمنع التزاوج مع: <span style="font-weight:900;">' + escHtml(x.name) + '</span>' + (x.breed ? ' (' + escHtml(x.breed) + ')' : '') + ' <span style="font-weight:400;font-size:11px;color:#c62828;">— ' + relation + '</span></div>');
-  }
-  /* الآباء المباشرون */
-  if (a.fatherId) forbidLine(byId[a.fatherId], 'أب مباشر');
-  if (a.motherId) forbidLine(byId[a.motherId], 'أم مباشرة');
-  /* الإخوة */
-  allAnimals.forEach(function(x) {
-    if (x.id === a.id || x.fatherId === a.id || x.motherId === a.id) return;
-    if ((a.fatherId && x.fatherId === a.fatherId) || (a.motherId && x.motherId === a.motherId)) forbidLine(x, 'أخ/أخت');
+  Object.keys(kinshipMap).forEach(function(id) {
+    var x = byId[id];
+    if (!x) return;
+    lines.push('<div style="color:#b71c1c;font-size:12px;font-weight:700;margin-bottom:4px;padding:3px 0;">&#x1F6AB; يُمنع التزاوج مع: <span style="font-weight:900;">' + escHtml(x.name) + '</span>' + (x.breed ? ' (' + escHtml(x.breed) + ')' : '') + ' <span style="font-weight:400;font-size:11px;color:#c62828;">— صلة القرابة: ' + kinshipMap[id] + '</span></div>');
   });
-  /* الأبناء */
-  allAnimals.forEach(function(x) {
-    if (x.fatherId === a.id || x.motherId === a.id) forbidLine(x, 'ابن/ابنة');
-  });
-  /* الأجداد وما فوق */
-  var relIds = getAllRelatives(a.id, byId, allAnimals);
-  relIds.forEach(function(rid) { forbidLine(byId[rid], 'قريب وراثي'); });
   return lines;
 }
 
-/* ===== توصيات التزاوج الذكي — اسم وسلالة لكل مرشح ===== */
+/* ===== توصيات التزاوج الذكي — اسم وسلالة لكل مرشح بدون قرابة ===== */
 function getSmartRecommendations(a, allAnimals) {
   var byId = {};
   allAnimals.forEach(function(x){ byId[x.id] = x; });
-  var relSet = {}; relSet[a.id] = true;
-  getAllRelatives(a.id, byId, allAnimals).forEach(function(id){ relSet[id] = true; });
-  var active = allAnimals.filter(function(x){ return x.status === 'active' && !relSet[x.id]; });
+  var kinshipMap = getKinshipMap(a.id, byId, allAnimals);
+  kinshipMap[a.id] = 'نفسه';
+  var active = allAnimals.filter(function(x){ return x.status === 'active' && !kinshipMap[x.id]; });
   var lines = [];
   var breed = (a.breed || '').trim();
   var isF1 = breed.indexOf('F1') !== -1 || breed.indexOf('f1') !== -1 || breed.indexOf('هجين') !== -1;
@@ -896,7 +906,6 @@ function getSmartRecommendations(a, allAnimals) {
   });
 
   if (opposite.length === 0) {
-    /* لا يوجد مرشح مؤهل — توصية الشراء */
     if (a.gender === 'أنثى') {
       var suggest = isF1 ? 'بور (Boer)' : 'دمشقي';
       lines.push('<div style="color:#e65100;font-size:12px;font-weight:700;margin-bottom:4px;">&#x1F6D2; لا يوجد فحل مؤهل — يُنصح بشراء فحل <strong>' + suggest + '</strong> لتحقيق أفضل إنتاج هجين</div>');
@@ -906,7 +915,6 @@ function getSmartRecommendations(a, allAnimals) {
     return lines;
   }
 
-  /* رتّب المرشحين: الأنسب أولاً */
   var preferred = [];
   var others = [];
   opposite.forEach(function(x) {
@@ -925,7 +933,7 @@ function getSmartRecommendations(a, allAnimals) {
       if (!isF1 && b.indexOf('دمشقي') !== -1) note = '— مُثالي لإنتاج F1';
       else if (isF1 && (b.indexOf('بور') !== -1 || b.indexOf('boer') !== -1)) note = '— مُثالي لإنتاج لحم';
     }
-    lines.push('<div style="color:#1b5e20;font-size:12px;font-weight:700;margin-bottom:4px;padding:3px 0;">&#x2705; مرشح مناسب: <span style="font-weight:900;">' + escHtml(x.name) + '</span>' + (x.breed ? ' (' + escHtml(x.breed) + ')' : '') + (note ? ' <span style="font-weight:400;font-size:11px;color:#388e3c;">' + note + '</span>' : '') + '</div>');
+    lines.push('<div style="color:#1b5e20;font-size:12px;font-weight:700;margin-bottom:4px;padding:3px 0;">&#x2705; مرشح مناسب للتزاوج: <span style="font-weight:900;">' + escHtml(x.name) + '</span>' + (x.breed ? ' (' + escHtml(x.breed) + ')' : '') + ' <span style="font-weight:400;font-size:11px;color:#388e3c;">' + (note || '— بدون قرابة') + '</span></div>');
   });
   return lines;
 }
