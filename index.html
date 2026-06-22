@@ -430,29 +430,22 @@
     </div>
 
     <div style="margin-bottom:14px;">
-      <label style="font-size:18px;font-weight:700;display:block;margin-bottom:8px;">السلالة</label>
-      <select class="form-select" id="modal-breed">
-        <option>عربي بلدي</option>
-        <option>دمشقي (شامي)</option>
-        <option>بور (Boer)</option>
-        <option>هجين الجيل الأول (F1)</option>
-        <option>هجين الجيل الثاني (F2)</option>
-        <option>غير معروف</option>
-      </select>
-    </div>
-
-    <div style="margin-bottom:14px;">
       <label style="font-size:18px;font-weight:700;display:block;margin-bottom:8px;"><i class="fa-solid fa-mars" style="color:#1565c0;"></i> الأب</label>
-      <select class="form-select" id="modal-father">
+      <select class="form-select" id="modal-father" onchange="autoBreed()">
         <option value="">خارجي / غير معروف</option>
       </select>
     </div>
 
     <div style="margin-bottom:14px;">
       <label style="font-size:18px;font-weight:700;display:block;margin-bottom:8px;"><i class="fa-solid fa-venus" style="color:#c2185b;"></i> الأم</label>
-      <select class="form-select" id="modal-mother">
+      <select class="form-select" id="modal-mother" onchange="autoBreed()">
         <option value="">خارجي / غير معروف</option>
       </select>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:18px;font-weight:700;display:block;margin-bottom:8px;">السلالة <span id="breed-auto-badge" style="display:none;font-size:13px;font-weight:600;background:#e8f5e9;color:#2e7d32;border-radius:8px;padding:2px 8px;margin-right:6px;">⚡ محسوبة آلياً</span></label>
+      <input class="form-input" id="modal-breed" type="text" placeholder="اختر الأبوين أعلاه أو اكتب السلالة يدوياً" style="margin-bottom:0;" />
     </div>
 
     <div style="margin-bottom:14px;">
@@ -940,11 +933,92 @@ function getSmartRecommendations(a, allAnimals) {
   return lines;
 }
 
+// ===== محرك الاستنتاج الوراثي =====
+var _breedCache = {};
+
+function _parseBreed(breedStr) {
+  var s = (breedStr || '').trim();
+  var fxMatch = s.match(/F(\d+)/i);
+  var gen = fxMatch ? parseInt(fxMatch[1]) : 0;
+  var isPure = gen === 0;
+  return { raw: s, gen: gen, isPure: isPure };
+}
+
+function _normBreed(s) {
+  s = (s || '').trim();
+  if (!s || s === 'خارجي / غير معروف' || s === 'غير معروف') return 'غير معروف';
+  return s;
+}
+
+function calculateOffspringBreed(fatherId, motherId) {
+  var fAnimal = fatherId ? _breedCache[fatherId] : null;
+  var mAnimal = motherId ? _breedCache[motherId] : null;
+  var fBreed = _normBreed(fAnimal ? fAnimal.breed : '');
+  var mBreed = _normBreed(mAnimal ? mAnimal.breed : '');
+
+  if (fBreed === 'غير معروف' && mBreed === 'غير معروف') return '';
+
+  var fp = _parseBreed(fBreed);
+  var mp = _parseBreed(mBreed);
+
+  /* نفس السلالة النقية */
+  if (fp.isPure && mp.isPure) {
+    if (fBreed === mBreed) return fBreed;
+    /* سلالتان نقيتان مختلفتان → F1 */
+    return 'هجين الجيل الأول (F1) — 50% ' + fBreed + ' | 50% ' + mBreed;
+  }
+
+  /* أحدهما نقي والآخر هجين → هجين رجعي */
+  if (fp.isPure && !mp.isPure) {
+    var nextGen = mp.gen + 1;
+    return 'هجين الجيل ' + nextGen + ' (F' + nextGen + ') — ' + fBreed + ' × ' + mBreed;
+  }
+  if (!fp.isPure && mp.isPure) {
+    var nextGen2 = fp.gen + 1;
+    return 'هجين الجيل ' + nextGen2 + ' (F' + nextGen2 + ') — ' + fBreed + ' × ' + mBreed;
+  }
+
+  /* كلاهما هجين */
+  var maxGen = Math.max(fp.gen, mp.gen) + 1;
+  return 'هجين الجيل ' + maxGen + ' (F' + maxGen + ') — ' + fBreed + ' × ' + mBreed;
+}
+
+function autoBreed() {
+  var fSel = document.getElementById('modal-father');
+  var mSel = document.getElementById('modal-mother');
+  var fId = fSel.value;
+  var mId = mSel.value;
+  var breedInput = document.getElementById('modal-breed');
+  var badge = document.getElementById('breed-auto-badge');
+
+  if (!fId && !mId) {
+    breedInput.readOnly = false;
+    breedInput.style.background = '';
+    badge.style.display = 'none';
+    return;
+  }
+
+  var result = calculateOffspringBreed(fId, mId);
+  if (result) {
+    breedInput.value = result;
+    breedInput.readOnly = true;
+    breedInput.style.background = '#f1f8e9';
+    badge.style.display = 'inline';
+  } else {
+    breedInput.readOnly = false;
+    breedInput.style.background = '';
+    badge.style.display = 'none';
+  }
+}
+
 // ===== Modal إضافة =====
 function openModal() {
   pendingPhoto = null; selectedGender = '';
   document.getElementById('modal-name').value = '';
-  document.getElementById('modal-breed').selectedIndex = 0;
+  document.getElementById('modal-breed').value = '';
+  document.getElementById('modal-breed').readOnly = false;
+  document.getElementById('modal-breed').style.background = '';
+  document.getElementById('breed-auto-badge').style.display = 'none';
   document.getElementById('modal-history').value = '';
   document.getElementById('photo-preview').style.display = 'none';
   document.getElementById('photo-label').style.display = 'flex';
@@ -957,6 +1031,10 @@ function openModal() {
     var active = animals.filter(function(a){ return a.status === 'active'; });
     var males   = active.filter(function(a){ return a.gender === 'ذكر'; });
     var females = active.filter(function(a){ return a.gender === 'أنثى'; });
+
+    /* بناء ذاكرة التخزين المؤقت للسلالات */
+    _breedCache = {};
+    animals.forEach(function(a){ _breedCache[a.id] = a; });
 
     var fSel = document.getElementById('modal-father');
     var mSel = document.getElementById('modal-mother');
