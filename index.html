@@ -564,6 +564,12 @@ function renderRegister() {
   });
 }
 
+function genderIcon(gender) {
+  if (gender === 'أنثى') return '<i class="fa-solid fa-venus" style="color:#c2185b;font-weight:900;margin-left:4px;"></i>';
+  if (gender === 'ذكر')  return '<i class="fa-solid fa-mars"  style="color:#1565c0;font-weight:900;margin-left:4px;"></i>';
+  return '';
+}
+
 function renderAnimalCard(a, archived) {
   var statusLabel = {active:'✅ نشط', sold:'💰 مباع', slaughtered:'🔪 مذبوح', dead:'💀 نافق'}[a.status] || a.status;
   var statusCls   = 'status-' + (a.status||'active');
@@ -578,7 +584,7 @@ function renderAnimalCard(a, archived) {
     + '<div class="animal-body">'
     + '<div class="animal-header">'
     + '<div class="animal-id">' + escHtml(a.name||'بدون اسم') + '</div>'
-    + '<span class="animal-badge ' + genderCls + '">' + (a.gender||'') + '</span>'
+    + '<span class="animal-badge ' + genderCls + '">' + genderIcon(a.gender) + ' ' + (a.gender||'') + '</span>'
     + '</div>'
     + '<div style="margin-bottom:8px;"><span style="color:#666;font-size:15px;">' + (a.breed||'') + '</span></div>'
     + '<span class="status-badge ' + statusCls + '">' + statusLabel + dateOut + '</span>'
@@ -678,52 +684,148 @@ function setStatus(newStatus) {
 }
 
 // ===== PDF =====
-function exportPDF() {
-  dbGetAll(function(animals) {
-    var active = animals.filter(function(a){ return a.status==='active'; });
-    var f = active.filter(function(a){ return a.gender==='أنثى'; }).length;
-    var m = active.filter(function(a){ return a.gender==='ذكر'; }).length;
+async function exportPDF() {
+  var btn = document.querySelector('.btn-pdf');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التجهيز...'; }
 
-    var statusLabel = {active:'نشط', sold:'مباع', slaughtered:'مذبوح', dead:'نافق'};
-    var rows = animals.map(function(a, i) {
-      return '<tr style="border-bottom:1px solid #eee;">'
-        + '<td style="padding:8px;text-align:center;">' + (i+1) + '</td>'
-        + '<td style="padding:8px;">' + escHtml(a.name||'—') + '</td>'
-        + '<td style="padding:8px;">' + (a.gender||'—') + '</td>'
-        + '<td style="padding:8px;">' + (a.breed||'—') + '</td>'
-        + '<td style="padding:8px;">' + (statusLabel[a.status]||a.status) + '</td>'
-        + '<td style="padding:8px;">' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '—') + '</td>'
-        + '<td style="padding:8px;">' + (a.dateRemoved ? new Date(a.dateRemoved).toLocaleDateString('ar') : '—') + '</td>'
-        + '</tr>';
-    }).join('');
+  var animals = await new Promise(function(resolve) { dbGetAll(resolve); });
+  var active  = animals.filter(function(a){ return a.status === 'active'; });
+  var f = active.filter(function(a){ return a.gender === 'أنثى'; }).length;
+  var m = active.filter(function(a){ return a.gender === 'ذكر'; }).length;
 
-    var content = '<div id="pdf-inner" style="font-family:Arial,sans-serif;direction:rtl;padding:24px;background:white;">'
-      + '<h2 style="color:#2e7d32;border-bottom:3px solid #2e7d32;padding-bottom:8px;margin-bottom:16px;">🐐 تقرير قطيع الماعز — منزل بوزيان</h2>'
-      + '<p style="margin-bottom:4px;"><strong>التاريخ:</strong> ' + new Date().toLocaleDateString('ar') + '</p>'
-      + '<p style="margin-bottom:16px;"><strong>القطيع النشط:</strong> ' + active.length + ' رأس (' + f + ' إناث / ' + m + ' فحول) &nbsp;|&nbsp; <strong>الإجمالي:</strong> ' + animals.length + '</p>'
-      + '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
-      + '<thead><tr style="background:#2e7d32;color:white;">'
-      + '<th style="padding:8px;">#</th><th style="padding:8px;">الاسم/الرقم</th><th style="padding:8px;">الجنس</th>'
-      + '<th style="padding:8px;">السلالة</th><th style="padding:8px;">الحالة</th>'
-      + '<th style="padding:8px;">تاريخ الدخول</th><th style="padding:8px;">تاريخ الخروج</th></tr></thead>'
-      + '<tbody>' + rows + '</tbody></table></div>';
+  /* --- بطاقات الحيوانات بالصور --- */
+  var animalCards = active.map(function(a) {
+    var gIcon = a.gender === 'أنثى'
+      ? '<span style="color:#c2185b;font-weight:900;">&#9792; أنثى</span>'
+      : '<span style="color:#1565c0;font-weight:900;">&#9794; ذكر</span>';
+    var photoTag = a.photo
+      ? '<img src="' + a.photo + '" style="width:100%;height:110px;object-fit:cover;border-radius:8px;display:block;margin-bottom:8px;" />'
+      : '<div style="width:100%;height:80px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:8px;">🐐</div>';
+    return '<div style="background:white;border:2px solid #4caf50;border-radius:12px;overflow:hidden;break-inside:avoid;">'
+      + photoTag
+      + '<div style="padding:8px;">'
+      + '<div style="font-size:15px;font-weight:900;margin-bottom:4px;">' + escHtml(a.name||'بدون اسم') + '</div>'
+      + '<div style="font-size:12px;margin-bottom:2px;">' + gIcon + '</div>'
+      + '<div style="font-size:11px;color:#555;">' + (a.breed||'') + '</div>'
+      + '<div style="font-size:11px;color:#2e7d32;font-weight:700;margin-top:4px;">دخل: ' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '—') + '</div>'
+      + '</div></div>';
+  }).join('');
 
-    var wrapper = document.createElement('div');
-    wrapper.innerHTML = content;
-    wrapper.style.cssText = 'position:fixed;top:0;left:0;width:794px;background:white;z-index:9999;padding:0;';
-    document.body.appendChild(wrapper);
+  /* --- قالب HTML الكامل للطباعة --- */
+  var html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"/>'
+    + '<style>'
+    + 'body{font-family:Arial,sans-serif;direction:rtl;background:white;margin:0;padding:20px;color:#111;}'
+    + 'h1{color:#2e7d32;border-bottom:4px solid #2e7d32;padding-bottom:8px;margin-bottom:6px;font-size:22px;}'
+    + '.meta{font-size:13px;color:#444;margin-bottom:18px;}'
+    + '.section-title{font-size:16px;font-weight:bold;color:#2e7d32;margin:18px 0 10px;border-right:5px solid #4caf50;padding-right:10px;}'
+    + '.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}'
+    + '.stat-box{background:#e8f5e9;border:2px solid #4caf50;border-radius:10px;padding:12px;text-align:center;}'
+    + '.stat-num{font-size:28px;font-weight:900;color:#2e7d32;}'
+    + '.stat-lbl{font-size:13px;color:#555;}'
+    + '.tree-box{display:inline-block;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:bold;text-align:center;min-width:90px;}'
+    + '.tb-gray{background:#f5f5f5;border:2px solid #9e9e9e;color:#424242;}'
+    + '.tb-blue{background:#bbdefb;border:2px solid #1565c0;color:#0d47a1;}'
+    + '.tb-green{background:#c8e6c9;border:2px solid #2e7d32;color:#1b5e20;}'
+    + '.tb-orange{background:#ffe0b2;border:2px solid #e65100;color:#bf360c;}'
+    + '.tb-red{background:#ffcdd2;border:2px solid #c62828;color:#b71c1c;}'
+    + '.arrow{font-size:18px;color:#888;text-align:center;margin:4px 0;}'
+    + '.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}'
+    + '.col-inner{display:flex;flex-direction:column;align-items:center;gap:6px;}'
+    + '.animals-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}'
+    + '.rule-box{background:#ffebee;border-right:5px solid #e53935;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:6px;color:#b71c1c;font-weight:bold;}'
+    + '</style></head><body>'
+
+    /* ترويسة */
+    + '<h1>🐐 تقرير قطيع الماعز — منزل بوزيان</h1>'
+    + '<div class="meta">التاريخ: ' + new Date().toLocaleDateString('ar')
+    + ' &nbsp;|&nbsp; القطيع النشط: ' + active.length + ' رأس'
+    + ' &nbsp;|&nbsp; إجمالي السجل: ' + animals.length + ' رأس</div>'
+
+    /* إحصائيات سريعة */
+    + '<div class="grid-3">'
+    + '<div class="stat-box"><div class="stat-num" style="color:#c2185b;">' + f + '</div><div class="stat-lbl">&#9792; إناث نشطة</div></div>'
+    + '<div class="stat-box"><div class="stat-num" style="color:#1565c0;">' + m + '</div><div class="stat-lbl">&#9794; فحول نشطة</div></div>'
+    + '<div class="stat-box"><div class="stat-num">' + animals.length + '</div><div class="stat-lbl">إجمالي السجل</div></div>'
+    + '</div>'
+
+    /* الخريطة الوراثية */
+    + '<div class="section-title">🧬 استراتيجية التزاوج — الخريطة الوراثية</div>'
+    + '<div style="text-align:center;margin-bottom:12px;">'
+    + '<div style="display:flex;justify-content:center;gap:16px;margin-bottom:6px;">'
+    + '<span class="tree-box tb-gray">🐐🐐 نواة عربي خالص<br/>(2–3 إناث دائمة)</span>'
+    + '<span style="font-size:22px;color:#666;align-self:center;">✕</span>'
+    + '<span class="tree-box tb-gray">🐐♂ فحل دمشقي</span>'
+    + '</div>'
+    + '<div class="arrow">⬇</div>'
+    + '<div style="display:flex;justify-content:center;margin-bottom:6px;">'
+    + '<span class="tree-box tb-blue">إناث الجيل الأول (F1) — 50% دمشقي</span>'
+    + '</div>'
+    + '<div class="arrow">⬇ تنقسم إلى خطّين</div>'
+    + '<div class="two-col" style="max-width:600px;margin:0 auto;">'
+    + '<div class="col-inner">'
+    + '<div class="tree-box tb-blue" style="width:100%;">🔵 خط الأمهات — أفضل الإناث</div>'
+    + '<div class="arrow">⬇</div>'
+    + '<div class="tree-box tb-blue" style="width:100%;">🔄 دوران: عربي / دمشقي بالتناوب</div>'
+    + '<div class="arrow">⬇</div>'
+    + '<div class="tree-box tb-green" style="width:100%;">💪 بدائل صلبة دائمة للأبد</div>'
+    + '</div>'
+    + '<div class="col-inner">'
+    + '<div class="tree-box tb-orange" style="width:100%;">🟠 خط اللحم — الفائض</div>'
+    + '<div class="arrow">⬇</div>'
+    + '<div class="tree-box tb-orange" style="width:100%;">✕ فحل بور</div>'
+    + '<div class="arrow">⬇</div>'
+    + '<div class="tree-box tb-red" style="width:100%;">🥩 كل النتاج يُباع</div>'
+    + '</div></div></div>'
+
+    /* القواعد الذهبية */
+    + '<div class="section-title">⛔ القواعد الذهبية</div>'
+    + '<div class="rule-box">🔴 لا يُلقّح فحل بناتِه أبداً — اشترِ فحلاً جديداً غير قريب كل 2–3 سنوات</div>'
+    + '<div class="rule-box">🔴 لا تُلقّح أنثى تحت 30 كيلوغراماً</div>'
+    + '<div class="rule-box">🔴 لا تُدخل حيواناً جديداً دون حجر صحي 3–4 أسابيع + تحاليل دم</div>'
+
+    /* سجل القطيع بالصور */
+    + (active.length > 0
+      ? '<div class="section-title">📋 سجل القطيع النشط بالصور</div><div class="animals-grid">' + animalCards + '</div>'
+      : '<div class="section-title">📋 سجل القطيع</div><p style="color:#999;text-align:center;">لا يوجد حيوانات نشطة مسجّلة</p>')
+
+    + '</body></html>';
+
+  /* إنشاء iframe مخفي — أفضل بكثير من div لتجنب تأثير overflow */
+  var iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1024px;height:800px;border:none;visibility:hidden;';
+  document.body.appendChild(iframe);
+  var idoc = iframe.contentDocument || iframe.contentWindow.document;
+  idoc.open(); idoc.write(html); idoc.close();
+
+  /* انتظر تحميل كل الصور داخل الـ iframe */
+  var imgs = idoc.querySelectorAll('img');
+  var imgPromises = Array.from(imgs).map(function(img) {
+    if (img.complete) return Promise.resolve();
+    return new Promise(function(res) { img.onload = res; img.onerror = res; });
+  });
+
+  Promise.all(imgPromises).then(function() {
+    return new Promise(function(res) { setTimeout(res, 300); });
+  }).then(function() {
     window.scrollTo(0, 0);
-
-    setTimeout(function() {
-      html2pdf().set({
-        margin: 10,
-        filename: 'قطيع-الماعز-' + new Date().toLocaleDateString('ar').replace(/\//g,'-') + '.pdf',
-        html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: document.documentElement.offsetWidth },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      }).from(wrapper).save().then(function() {
-        document.body.removeChild(wrapper);
-      });
-    }, 200);
+    return html2pdf().set({
+      margin: [8, 6, 8, 6],
+      filename: 'قطيع-الماعز-' + new Date().toLocaleDateString('ar').replace(/\//g,'-') + '.pdf',
+      html2canvas: {
+        scale: 2, useCORS: true, allowTaint: true,
+        scrollY: 0, windowWidth: 1024, logging: false
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    }).from(idoc.body).save();
+  }).then(function() {
+    document.body.removeChild(iframe);
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> تحميل التقرير (PDF)'; }
+  }).catch(function(err) {
+    console.error(err);
+    document.body.removeChild(iframe);
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> تحميل التقرير (PDF)'; }
+    alert('حدث خطأ أثناء توليد الـ PDF. حاول مرة أخرى.');
   });
 }
 
