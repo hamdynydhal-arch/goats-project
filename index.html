@@ -165,9 +165,9 @@
     .pedigree-title { font-size: 14px; font-weight: 900; color: #33691e; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     .ped-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; cursor: grab; padding: 8px 8px 14px; direction: ltr; }
     .ped-scroll-wrap:active { cursor: grabbing; }
-    .ped-inner { display: inline-flex; flex-direction: column; align-items: center; min-width: max-content; }
-    .ped-branch { display: inline-flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-    .ped-node { border-radius: 10px; padding: 8px 6px; text-align: center; font-size: 11px; font-weight: 700; width: 110px; position: relative; flex-shrink: 0; direction: rtl; }
+    .ped-inner { display: inline-block; text-align: center; }
+    .ped-branch { display: inline-block; text-align: center; }
+    .ped-node { border-radius: 10px; padding: 8px 6px; text-align: center; font-size: 11px; font-weight: 700; width: 110px; position: relative; display: inline-block; direction: rtl; }
     .ped-node.male    { background: #e3f2fd; border: 2px solid #1565c0; color: #0d47a1; }
     .ped-node.female  { background: #fce4ec; border: 2px solid #c2185b; color: #880e4f; }
     .ped-node.self    { background: #e8f5e9; border: 3px solid #2e7d32; color: #1b5e20; }
@@ -717,44 +717,23 @@ function getForbiddenIds(a, allAnimals) {
   return ids;
 }
 
-var PED_NODE_W = 110;
-var PED_GAP = 20;
-
-/* يحسب العرض الكلي لفرع في الشجرة بالبكسل */
-function getBranchWidth(id, fallbackName, depth, visited, byId) {
-  var MAX_D = 4;
-  var animal = id ? byId[id] : null;
-  if (!animal || visited[id] || depth >= MAX_D) return PED_NODE_W;
-  var hasFather = (animal.fatherId && byId[animal.fatherId]) || (animal.fatherName && animal.fatherName !== 'خارجي / غير معروف');
-  var hasMother = (animal.motherId && byId[animal.motherId]) || (animal.motherName && animal.motherName !== 'خارجي / غير معروف');
-  if (!hasFather && !hasMother) return PED_NODE_W;
-  var v2 = Object.assign({}, visited); v2[id] = true;
-  var fw = getBranchWidth(animal.fatherId, animal.fatherName, depth+1, v2, byId);
-  var mw = getBranchWidth(animal.motherId, animal.motherName, depth+1, v2, byId);
-  return fw + PED_GAP + mw;
-}
-
-/* يرسم موصّل SVG دقيق الرياضيات بين فرعين وابنهما */
-function pedSvg(fW, mW) {
-  var total = fW + PED_GAP + mW;
-  var fc = fW / 2;          /* مركز فرع الأب */
-  var mc = fW + PED_GAP + mW / 2;  /* مركز فرع الأم */
-  var mid = total / 2;      /* مركز الموصّل حيث ينزل الخط الرأسي */
-  return '<svg width="' + total + '" height="24" style="display:block;flex-shrink:0;overflow:visible;">'
-    + '<line x1="' + fc  + '" y1="0"  x2="' + fc  + '" y2="12" stroke="#7cb342" stroke-width="2.5"/>'
-    + '<line x1="' + mc  + '" y1="0"  x2="' + mc  + '" y2="12" stroke="#7cb342" stroke-width="2.5"/>'
-    + '<line x1="' + fc  + '" y1="12" x2="' + mc  + '" y2="12" stroke="#7cb342" stroke-width="2.5"/>'
-    + '<line x1="' + mid + '" y1="12" x2="' + mid + '" y2="24" stroke="#7cb342" stroke-width="2.5"/>'
+/* ===== موصّل SVG ثابت النسب (25% أب — 75% أم) بدون أي حسابات يدوية ===== */
+function pedSvg() {
+  /* viewBox="0 0 200 24" + preserveAspectRatio="none" → الخطوط تتمدد بدقة مع عرض الجدول */
+  return '<svg width="100%" height="24" viewBox="0 0 200 24" preserveAspectRatio="none" style="display:block;min-width:220px;">'
+    + '<line x1="50"  y1="0"  x2="50"  y2="12" stroke="#7cb342" stroke-width="2.5"/>'
+    + '<line x1="150" y1="0"  x2="150" y2="12" stroke="#7cb342" stroke-width="2.5"/>'
+    + '<line x1="50"  y1="12" x2="150" y2="12" stroke="#7cb342" stroke-width="2.5"/>'
+    + '<line x1="100" y1="12" x2="100" y2="24" stroke="#7cb342" stroke-width="2.5"/>'
     + '</svg>';
 }
 
-/* ===== بناء فرع عودي بموصّلات SVG دقيقة (MAX_DEPTH=4) ===== */
+/* ===== بناء فرع عودي بجداول 50/50 محكمة (MAX_DEPTH=4) ===== */
 function buildBranch(id, fallbackName, role, depth, visited, forbiddenIds, byId) {
   var MAX_DEPTH = 4;
   var animal = id ? byId[id] : null;
   var isForbidden = id && forbiddenIds[id];
-  var cls = 'unknown';
-  var icon = '?';
+  var cls = 'unknown'; var icon = '?';
   var label = (fallbackName && fallbackName !== 'خارجي / غير معروف') ? escHtml(fallbackName) : (role || 'غير معروف');
   if (animal) {
     cls = animal.gender === 'ذكر' ? 'male' : 'female';
@@ -777,24 +756,27 @@ function buildBranch(id, fallbackName, role, depth, visited, forbiddenIds, byId)
     var hasFather = (animal.fatherId && byId[animal.fatherId]) || (animal.fatherName && animal.fatherName !== 'خارجي / غير معروف');
     var hasMother = (animal.motherId && byId[animal.motherId]) || (animal.motherName && animal.motherName !== 'خارجي / غير معروف');
     if (hasFather || hasMother) {
-      var fw = getBranchWidth(animal.fatherId, animal.fatherName, depth+1, v2, byId);
-      var mw = getBranchWidth(animal.motherId, animal.motherName, depth+1, v2, byId);
-      parentsHtml = '<div style="display:flex;gap:' + PED_GAP + 'px;">'
+      /* جدول بخليتين متساويتين — الأب يسار، الأم يمين — مستقل عن اتجاه الصفحة */
+      parentsHtml = '<div style="display:table;width:100%;direction:ltr;border-spacing:0;">'
+        + '<div style="display:table-cell;width:50%;text-align:center;vertical-align:bottom;">'
         + buildBranch(animal.fatherId, animal.fatherName, 'الأب', depth+1, v2, forbiddenIds, byId)
+        + '</div>'
+        + '<div style="display:table-cell;width:50%;text-align:center;vertical-align:bottom;">'
         + buildBranch(animal.motherId, animal.motherName, 'الأم', depth+1, v2, forbiddenIds, byId)
         + '</div>'
-        + pedSvg(fw, mw);
+        + '</div>'
+        + pedSvg();
     }
   }
   return '<div class="ped-branch">'
     + parentsHtml
-    + '<div class="ped-node ' + cls + '">'
+    + '<div class="ped-node ' + cls + '" style="margin:0 auto;">'
     + forbiddenBadge + icon + ' ' + label
     + '<div class="pn-label">' + role + '</div>'
     + bloodHtml + '</div></div>';
 }
 
-/* ===== شجرة الأنساب (عودية بـ SVG) ===== */
+/* ===== شجرة الأنساب (عودية بجداول + SVG نسبي) ===== */
 function renderPedigreeTree(a, allAnimals) {
   var byId = {};
   allAnimals.forEach(function(x){ byId[x.id] = x; });
@@ -808,17 +790,18 @@ function renderPedigreeTree(a, allAnimals) {
     .map(function(k){ return Math.round(blood[k]) + '% ' + k; });
   var selfBloodHtml = bloodParts.length ? '<div class="ped-blood">' + bloodParts.join(' | ') + '</div>' : '';
   var initVisited = {}; initVisited[a.id] = true;
-  var fw = getBranchWidth(a.fatherId, a.fatherName, 0, initVisited, byId);
-  var mw = getBranchWidth(a.motherId, a.motherName, 0, initVisited, byId);
   var fatherBranch = buildBranch(a.fatherId, a.fatherName, 'الأب', 0, initVisited, forbiddenIds, byId);
   var motherBranch = buildBranch(a.motherId, a.motherName, 'الأم', 0, initVisited, forbiddenIds, byId);
   return '<div class="pedigree-wrap">'
     + '<div class="pedigree-title"><i class="fa-solid fa-diagram-project"></i> شجرة الأنساب</div>'
     + '<div class="ped-scroll-wrap">'
     + '<div class="ped-inner">'
-    + '<div style="display:flex;gap:' + PED_GAP + 'px;">' + fatherBranch + motherBranch + '</div>'
-    + pedSvg(fw, mw)
-    + '<div class="ped-node self" style="width:' + (fw + PED_GAP + mw <= 240 ? (fw + PED_GAP + mw) : 240) + 'px;max-width:' + (fw + PED_GAP + mw) + 'px;">&#x1F410; ' + escHtml(a.name||'الحيوان الحالي')
+    + '<div style="display:table;width:100%;direction:ltr;border-spacing:0;">'
+    + '<div style="display:table-cell;width:50%;text-align:center;">' + fatherBranch + '</div>'
+    + '<div style="display:table-cell;width:50%;text-align:center;">' + motherBranch + '</div>'
+    + '</div>'
+    + pedSvg()
+    + '<div class="ped-node self" style="margin:0 auto;width:auto;min-width:110px;max-width:220px;display:block;">&#x1F410; ' + escHtml(a.name||'الحيوان الحالي')
     + '<div class="pn-label">الحيوان الحالي</div>' + selfBloodHtml + '</div>'
     + '</div></div></div>';
 }
