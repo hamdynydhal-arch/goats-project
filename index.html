@@ -794,11 +794,12 @@ function pedSvg() {
 }
 
 /* ===== بناء فرع عودي بجداول 50/50 محكمة (MAX_DEPTH=4) مع عرض درجة القرابة داخل البطاقة ===== */
-function buildBranch(id, fallbackName, role, depth, visited, kinshipMap, byId) {
+function buildBranch(id, fallbackName, role, depth, visited, kinshipMap, byId, currentGender) {
   var MAX_DEPTH = 4;
   var animal = id ? byId[id] : null;
   var kinshipLabel = id && kinshipMap[id] ? kinshipMap[id] : '';
-  var isForbidden = !!kinshipLabel;
+  /* علامة المنع فقط إذا كان الجنسان مختلفَين (شرط بيولوجي) */
+  var isForbidden = !!(kinshipLabel && animal && currentGender && animal.gender !== currentGender);
   var cls = 'unknown'; var icon = '?';
   var label = (fallbackName && fallbackName !== 'خارجي / غير معروف') ? escHtml(fallbackName) : (role || 'غير معروف');
   if (animal) {
@@ -808,8 +809,8 @@ function buildBranch(id, fallbackName, role, depth, visited, kinshipMap, byId) {
   }
   if (isForbidden) cls += ' forbidden';
   var forbiddenBadge = isForbidden ? '<span class="ped-forbidden-badge">&#x1F6AB;</span>' : '';
-  /* تحذير القرابة داخل البطاقة */
-  var kinshipHtml = kinshipLabel
+  /* تحذير القرابة داخل البطاقة — فقط للجنس المخالف */
+  var kinshipHtml = isForbidden
     ? '<div style="color:#c62828;font-size:9px;font-weight:700;margin-top:3px;border-top:1px solid #ef9a9a;padding-top:2px;">&#x1F6AB; ' + kinshipLabel + '</div>'
     : '';
   var bloodHtml = '';
@@ -828,10 +829,10 @@ function buildBranch(id, fallbackName, role, depth, visited, kinshipMap, byId) {
     if (hasFather || hasMother) {
       parentsHtml = '<div style="display:table;width:100%;direction:ltr;border-spacing:0;">'
         + '<div style="display:table-cell;width:50%;text-align:center;vertical-align:bottom;">'
-        + buildBranch(animal.fatherId, animal.fatherName, 'الأب', depth+1, v2, kinshipMap, byId)
+        + buildBranch(animal.fatherId, animal.fatherName, 'الأب', depth+1, v2, kinshipMap, byId, currentGender)
         + '</div>'
         + '<div style="display:table-cell;width:50%;text-align:center;vertical-align:bottom;">'
-        + buildBranch(animal.motherId, animal.motherName, 'الأم', depth+1, v2, kinshipMap, byId)
+        + buildBranch(animal.motherId, animal.motherName, 'الأم', depth+1, v2, kinshipMap, byId, currentGender)
         + '</div>'
         + '</div>'
         + pedSvg();
@@ -860,8 +861,8 @@ function renderPedigreeTree(a, allAnimals) {
     .map(function(k){ return Math.round(blood[k]) + '% ' + k; });
   var selfBloodHtml = bloodParts.length ? '<div class="ped-blood">' + bloodParts.join(' | ') + '</div>' : '';
   var initVisited = {}; initVisited[a.id] = true;
-  var fatherBranch = buildBranch(a.fatherId, a.fatherName, 'الأب', 0, initVisited, kinshipMap, byId);
-  var motherBranch = buildBranch(a.motherId, a.motherName, 'الأم', 0, initVisited, kinshipMap, byId);
+  var fatherBranch = buildBranch(a.fatherId, a.fatherName, 'الأب', 0, initVisited, kinshipMap, byId, a.gender);
+  var motherBranch = buildBranch(a.motherId, a.motherName, 'الأم', 0, initVisited, kinshipMap, byId, a.gender);
   return '<div class="pedigree-wrap">'
     + '<div class="pedigree-title"><i class="fa-solid fa-diagram-project"></i> شجرة الأنساب</div>'
     + '<div class="ped-scroll-wrap">'
@@ -876,7 +877,7 @@ function renderPedigreeTree(a, allAnimals) {
     + '</div></div></div>';
 }
 
-/* ===== كشف زواج الأقارب — اسم وسلالة ودرجة القرابة لكل فرد ===== */
+/* ===== كشف زواج الأقارب — اسم وسلالة ودرجة القرابة (الجنس المخالف فقط) ===== */
 function getInbreedingWarnings(a, allAnimals) {
   var byId = {};
   allAnimals.forEach(function(x){ byId[x.id] = x; });
@@ -884,7 +885,8 @@ function getInbreedingWarnings(a, allAnimals) {
   var lines = [];
   Object.keys(kinshipMap).forEach(function(id) {
     var x = byId[id];
-    if (!x) return;
+    /* شرط بيولوجي: يُمنع فقط إذا كان الجنس مختلفاً */
+    if (!x || x.gender === a.gender) return;
     lines.push('<div style="color:#b71c1c;font-size:12px;font-weight:700;margin-bottom:4px;padding:3px 0;">&#x1F6AB; يُمنع التزاوج مع: <span style="font-weight:900;">' + escHtml(x.name) + '</span>' + (x.breed ? ' (' + escHtml(x.breed) + ')' : '') + ' <span style="font-weight:400;font-size:11px;color:#c62828;">— صلة القرابة: ' + kinshipMap[id] + '</span></div>');
   });
   return lines;
