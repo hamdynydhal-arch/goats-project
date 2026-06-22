@@ -163,19 +163,24 @@
     /* ===== شجرة الأنساب (Recursive Pedigree Tree) ===== */
     .pedigree-wrap { background: #f9fbe7; border: 2px solid #aed581; border-radius: 14px; padding: 14px; margin-top: 12px; }
     .pedigree-title { font-size: 14px; font-weight: 900; color: #33691e; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-    .ped-scroll-wrap { overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; cursor: grab; padding-bottom: 6px; }
+    .ped-scroll-wrap { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; cursor: grab; padding: 8px 8px 12px; }
     .ped-scroll-wrap:active { cursor: grabbing; }
     .ped-inner { display: inline-flex; flex-direction: column; align-items: center; min-width: max-content; }
-    .ped-branch { display: inline-flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-    .ped-parents { display: flex; flex-direction: row; gap: 12px; justify-content: center; }
-    .ped-connector { display: flex; justify-content: center; gap: 12px; margin: 3px 0; }
-    .ped-line { width: 2px; height: 14px; background: #aed581; }
+    .ped-branch { display: inline-flex; flex-direction: column; align-items: center; flex-shrink: 0; position: relative; }
+    .ped-parents { display: flex; flex-direction: row; gap: 16px; justify-content: center; position: relative; padding-bottom: 14px; }
+    /* الخط الأفقي الذي يربط الأب بالأم */
+    .ped-parents::before { content: ''; position: absolute; bottom: 0; left: 25%; right: 25%; height: 2px; background: #aed581; }
+    /* خط رأسي ينزل من كل أب/أم إلى الخط الأفقي */
+    .ped-parents > .ped-branch { position: relative; }
+    .ped-parents > .ped-branch::after { content: ''; position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); width: 2px; height: 14px; background: #aed581; }
+    /* خط رأسي ينزل من الخط الأفقي إلى بطاقة الابن */
+    .ped-v-drop { width: 2px; height: 14px; background: #aed581; margin: 0 auto; flex-shrink: 0; }
     .ped-node { border-radius: 10px; padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; min-width: 90px; max-width: 130px; position: relative; flex-shrink: 0; margin: 0 auto; }
     .ped-node.male    { background: #e3f2fd; border: 2px solid #1565c0; color: #0d47a1; }
     .ped-node.female  { background: #fce4ec; border: 2px solid #c2185b; color: #880e4f; }
     .ped-node.self    { background: #e8f5e9; border: 3px solid #2e7d32; color: #1b5e20; }
     .ped-node.unknown { background: #f5f5f5; border: 2px dashed #9e9e9e; color: #757575; }
-    .ped-node.forbidden { border-color: #c62828 !important; box-shadow: 0 0 0 2px rgba(198,40,40,0.25); }
+    .ped-node.forbidden { border-color: #c62828 !important; box-shadow: 0 0 0 3px rgba(198,40,40,0.3); }
     .ped-forbidden-badge { position: absolute; top: -9px; right: -9px; font-size: 13px; line-height: 1; }
     .pn-label { font-size: 10px; font-weight: 400; margin-top: 2px; opacity: 0.75; }
     .ped-blood { font-size: 9px; font-weight: 600; margin-top: 3px; color: #555; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 2px; line-height: 1.5; }
@@ -183,6 +188,11 @@
     .inbreeding-warn { background: #fff3e0; border: 2px solid #f57c00; border-radius: 12px; padding: 10px 14px; margin-top: 10px; }
     .inbreeding-warn .iw-title { font-size: 13px; font-weight: 900; color: #e65100; margin-bottom: 6px; }
     .inbreeding-warn .iw-item  { font-size: 12px; color: #bf360c; margin-bottom: 3px; }
+    .inbreeding-warn .iw-note  { font-size: 11px; color: #7b3f00; margin-top: 8px; padding-top: 6px; border-top: 1px solid #f57c00; font-style: italic; }
+    /* ===== توصيات التزاوج الذكي ===== */
+    .smart-recs { background: #e8f5e9; border: 2px solid #4caf50; border-radius: 12px; padding: 10px 14px; margin-top: 10px; }
+    .smart-recs .sr-title { font-size: 13px; font-weight: 900; color: #1b5e20; margin-bottom: 6px; }
+    .smart-recs .sr-item  { font-size: 12px; color: #2e7d32; margin-bottom: 4px; }
     /* ===== النبذة التاريخية ===== */
     .history-box { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 14px; color: #555; line-height: 1.6; white-space: pre-wrap; }
   </style>
@@ -639,13 +649,21 @@ function renderAnimalCard(a, archived, allAnimals) {
   /* شجرة الأنساب */
   var pedigreeHtml = (hasFather || hasMother) ? renderPedigreeTree(a, allAnimals) : '';
 
-  /* تحذيرات زواج الأقارب (للحيوانات النشطة فقط) */
+  /* تحذيرات زواج الأقارب والتوصيات (للحيوانات النشطة فقط) */
   var warnHtml = '';
+  var recsHtml = '';
   if (!archived) {
     var warnings = getInbreedingWarnings(a, allAnimals);
     if (warnings.length > 0) {
       warnHtml = '<div class="inbreeding-warn"><div class="iw-title"><i class="fa-solid fa-triangle-exclamation"></i> تحذير وراثي — منع زواج الأقارب</div>'
         + warnings.map(function(w){ return '<div class="iw-item">' + w + '</div>'; }).join('')
+        + '<div class="iw-note">&#x1F4CC; يُمنع التزاوج مع أي من الأصول أو الفروع المذكورة في الشجرة لتجنب تشوهات زواج الأقارب</div>'
+        + '</div>';
+    }
+    var recs = getSmartRecommendations(a, allAnimals);
+    if (recs.length > 0) {
+      recsHtml = '<div class="smart-recs"><div class="sr-title">&#x1F4A1; التوصيات الاستراتيجية للتزاوج</div>'
+        + recs.map(function(r){ return '<div class="sr-item">' + r + '</div>'; }).join('')
         + '</div>';
     }
   }
@@ -668,6 +686,7 @@ function renderAnimalCard(a, archived, allAnimals) {
     + histHtml
     + pedigreeHtml
     + warnHtml
+    + recsHtml
     + '<div style="display:flex;gap:8px;margin-top:12px;">'
     + '<button onclick="openStatusModal(\'' + a.id + '\',\'' + escHtml(a.name||'بدون اسم') + '\')" style="flex:1;background:#fff3e0;color:#e65100;border:2px solid #f57c00;border-radius:10px;padding:11px;font-size:16px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:700;">🔄 تغيير الحالة</button>'
     + '</div></div></div>';
@@ -744,7 +763,7 @@ function buildBranch(id, fallbackName, role, depth, visited, forbiddenIds, byId)
         + buildBranch(animal.fatherId, animal.fatherName, 'الأب', depth+1, visited2, forbiddenIds, byId)
         + buildBranch(animal.motherId, animal.motherName, 'الأم', depth+1, visited2, forbiddenIds, byId)
         + '</div>'
-        + '<div class="ped-connector"><div class="ped-line"></div><div class="ped-line"></div></div>';
+        + '<div class="ped-v-drop"></div>';
     }
   }
   return '<div class="ped-branch">'
@@ -776,31 +795,121 @@ function renderPedigreeTree(a, allAnimals) {
     + '<div class="ped-scroll-wrap">'
     + '<div class="ped-inner">'
     + '<div class="ped-parents">' + fatherBranch + motherBranch + '</div>'
-    + '<div class="ped-connector"><div class="ped-line"></div><div class="ped-line"></div></div>'
+    + '<div class="ped-v-drop"></div>'
     + '<div class="ped-node self">&#x1F410; ' + escHtml(a.name||'الحيوان الحالي')
     + '<div class="pn-label">الحيوان الحالي</div>' + selfBloodHtml + '</div>'
     + '</div></div></div>';
 }
 
-/* ===== كشف زواج الأقارب ===== */
+/* ===== استخراج جميع الأقارب (عودي من جميع الأجيال) ===== */
+function getAllRelatives(animalId, byId, allAnimals) {
+  var visited = {};
+  var result = [];
+  function walkUp(id) {
+    if (!id || visited[id]) return;
+    visited[id] = true;
+    result.push(id);
+    var a = byId[id];
+    if (!a) return;
+    walkUp(a.fatherId);
+    walkUp(a.motherId);
+    allAnimals.forEach(function(x) {
+      if (x.id === id || visited[x.id]) return;
+      if ((a.fatherId && x.fatherId === a.fatherId) || (a.motherId && x.motherId === a.motherId)) {
+        visited[x.id] = true; result.push(x.id);
+      }
+    });
+  }
+  function walkDown(id) {
+    if (!id) return;
+    allAnimals.forEach(function(x) {
+      if (visited[x.id]) return;
+      if (x.fatherId === id || x.motherId === id) {
+        visited[x.id] = true; result.push(x.id); walkDown(x.id);
+      }
+    });
+  }
+  var self = byId[animalId];
+  if (!self) return result;
+  visited[animalId] = true;
+  walkUp(self.fatherId);
+  walkUp(self.motherId);
+  if (self.fatherId || self.motherId) {
+    allAnimals.forEach(function(x) {
+      if (x.id === animalId || visited[x.id]) return;
+      if ((self.fatherId && x.fatherId === self.fatherId) || (self.motherId && x.motherId === self.motherId)) {
+        visited[x.id] = true; result.push(x.id);
+      }
+    });
+  }
+  walkDown(animalId);
+  return result;
+}
+
+/* ===== كشف زواج الأقارب (عميق) ===== */
 function getInbreedingWarnings(a, allAnimals) {
+  var byId = {};
+  allAnimals.forEach(function(x){ byId[x.id] = x; });
+  var relIds = getAllRelatives(a.id, byId, allAnimals);
   var warnings = [];
   if (a.fatherId) {
-    var f = allAnimals.find(function(x){ return x.id === a.fatherId; });
+    var f = byId[a.fatherId];
     if (f) warnings.push('&#x1F6AB; يُمنع التزاوج مع الأب: <strong>' + escHtml(f.name) + '</strong>');
   }
   if (a.motherId) {
-    var m = allAnimals.find(function(x){ return x.id === a.motherId; });
+    var m = byId[a.motherId];
     if (m) warnings.push('&#x1F6AB; يُمنع التزاوج مع الأم: <strong>' + escHtml(m.name) + '</strong>');
   }
   var siblings = allAnimals.filter(function(x) {
-    if (x.id === a.id) return false;
+    if (x.id === a.id || x.fatherId === a.id || x.motherId === a.id) return false;
     return (a.fatherId && x.fatherId === a.fatherId) || (a.motherId && x.motherId === a.motherId);
   });
   if (siblings.length > 0) warnings.push('&#x26A0;&#xFE0F; يُمنع التزاوج مع الإخوة: <strong>' + siblings.map(function(s){ return escHtml(s.name); }).join('، ') + '</strong>');
   var children = allAnimals.filter(function(x){ return x.fatherId === a.id || x.motherId === a.id; });
   if (children.length > 0) warnings.push('&#x1F6AB; يُمنع التزاوج مع الأبناء: <strong>' + children.map(function(c){ return escHtml(c.name); }).join('، ') + '</strong>');
   return warnings;
+}
+
+/* ===== توصيات التزاوج الذكي ===== */
+function getSmartRecommendations(a, allAnimals) {
+  var byId = {};
+  allAnimals.forEach(function(x){ byId[x.id] = x; });
+  var relSet = {};
+  getAllRelatives(a.id, byId, allAnimals).forEach(function(id){ relSet[id] = true; });
+  var active = allAnimals.filter(function(x){ return x.status === 'active' && x.id !== a.id && !relSet[x.id]; });
+  var recs = [];
+  var breed = (a.breed || '').trim();
+  if (a.gender === 'أنثى') {
+    var isF1 = breed.indexOf('F1') !== -1 || breed.indexOf('f1') !== -1 || breed.indexOf('هجين') !== -1;
+    if (!isF1) {
+      var damMale = active.find(function(x){ return x.gender === 'ذكر' && (x.breed||'').indexOf('دمشقي') !== -1; });
+      if (damMale) {
+        recs.push('&#x1F33F; يُنصح بتزويجها مع الفحل <strong>' + escHtml(damMale.name) + '</strong> (دمشقي) لإنتاج جيل F1 هجين عالي الجودة');
+      } else {
+        recs.push('&#x1F6D2; توصية شراء: يُنصح بشراء فحل <strong>دمشقي</strong> قوي لإنتاج جيل هجين F1 بنسبة ربحية عالية');
+      }
+    } else {
+      var boerMale = active.find(function(x){ return x.gender === 'ذكر' && ((x.breed||'').indexOf('بور') !== -1 || (x.breed||'').toLowerCase().indexOf('boer') !== -1); });
+      if (boerMale) {
+        recs.push('&#x1F969; يُنصح بتزويجها مع فحل البور <strong>' + escHtml(boerMale.name) + '</strong> لإنتاج جيل لحم تجاري ثقيل');
+      } else {
+        var arabMale = active.find(function(x){ return x.gender === 'ذكر' && (x.breed||'').indexOf('عربي') !== -1; });
+        if (arabMale) {
+          recs.push('&#x1F4C8; يُنصح بتزويجها مع <strong>' + escHtml(arabMale.name) + '</strong> (عربي) للحفاظ على الخط الوراثي');
+        } else {
+          recs.push('&#x1F6D2; توصية شراء: يُنصح بشراء فحل <strong>بور (Boer)</strong> لإنتاج أجسام لحم ثقيلة في أقل وقت');
+        }
+      }
+    }
+  } else if (a.gender === 'ذكر') {
+    var eligible = active.filter(function(x){ return x.gender === 'أنثى'; });
+    if (eligible.length > 0) {
+      recs.push('&#x2705; الإناث المؤهلة للتزاوج (بدون قرابة): <strong>' + eligible.map(function(f){ return escHtml(f.name) + ' (' + escHtml(f.breed||'') + ')'; }).join('، ') + '</strong>');
+    } else {
+      recs.push('&#x26A0;&#xFE0F; لا توجد إناث نشطة بدون صلة قرابة في القطيع حالياً');
+    }
+  }
+  return recs;
 }
 
 // ===== Modal إضافة =====
@@ -1010,10 +1119,21 @@ async function exportPDF() {
     return '<div style="background:#fff3e0;border:2px solid #f57c00;border-radius:8px;padding:8px 12px;margin-top:8px;">'
       + '<div style="font-size:12px;font-weight:900;color:#e65100;margin-bottom:4px;">&#x26A0; تحذير وراثي — منع زواج الأقارب</div>'
       + warns.map(function(w){ return '<div style="font-size:11px;color:#bf360c;margin-bottom:2px;">' + w + '</div>'; }).join('')
+      + '<div style="font-size:10px;color:#7b3f00;margin-top:6px;border-top:1px solid #f57c00;padding-top:4px;font-style:italic;">&#x1F4CC; يُمنع التزاوج مع أي من الأصول أو الفروع المذكورة في الشجرة لتجنب تشوهات زواج الأقارب</div>'
       + '</div>';
   }
 
-  /* ===== صفوف جدول الحيوانات (مع شجرة وتاريخ وتحذيرات) ===== */
+  /* ===== توصيات التزاوج الذكي للـ PDF ===== */
+  function pdfSmartRecs(a) {
+    var recs = getSmartRecommendations(a, animals);
+    if (recs.length === 0) return '';
+    return '<div style="background:#e8f5e9;border:2px solid #4caf50;border-radius:8px;padding:8px 12px;margin-top:8px;">'
+      + '<div style="font-size:12px;font-weight:900;color:#1b5e20;margin-bottom:4px;">&#x1F4A1; التوصيات الاستراتيجية للتزاوج</div>'
+      + recs.map(function(r){ return '<div style="font-size:11px;color:#2e7d32;margin-bottom:2px;">' + r + '</div>'; }).join('')
+      + '</div>';
+  }
+
+  /* ===== صفوف جدول الحيوانات (مع شجرة وتاريخ وتحذيرات وتوصيات) ===== */
   var animalRows = active.map(function(a) {
     var isFemale = a.gender === 'أنثى';
     var gColor   = isFemale ? '#c2185b' : '#1565c0';
@@ -1022,7 +1142,7 @@ async function exportPDF() {
       ? '<img src="' + a.photo + '" class="img-box" />'
       : '<div style="width:80px;height:80px;background:#f3f4f6;border-radius:8px;line-height:80px;text-align:center;font-size:28px;margin:0 auto;">&#x1F410;</div>';
 
-    var extraCols = pdfPedigreeTree(a) + pdfInbreedingWarnings(a)
+    var extraCols = pdfPedigreeTree(a) + pdfInbreedingWarnings(a) + pdfSmartRecs(a)
       + (a.historyText ? '<div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:6px;padding:8px;margin-top:8px;font-size:11px;color:#555;white-space:pre-wrap;"><i>&#x1F4DC; السجل التاريخي:</i> ' + escHtml(a.historyText) + '</div>' : '');
 
     return '<tr>'
