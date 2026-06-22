@@ -689,7 +689,7 @@ async function exportPDF() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التجهيز...'; }
 
   var animals = await new Promise(function(res) { dbGetAll(res); });
-  var active = animals.filter(function(a){ return a.status === 'active'; });
+  var active  = animals.filter(function(a){ return a.status === 'active'; });
   var f = active.filter(function(a){ return a.gender === 'أنثى'; }).length;
   var m = active.filter(function(a){ return a.gender === 'ذكر'; }).length;
 
@@ -701,7 +701,7 @@ async function exportPDF() {
   var recList = [];
   if (hasArabiFemale)  recList.push('الإناث العربيات: طبّق التغذية التحفيزية (300-400 غ/رأس/يوم) قبل التلقيح بـ15 يوماً وبعده لتحسين الإباضة وعدد الجداء.');
   if (hasDamascusMale) recList.push('الفحل الدمشقي: راقب نسبة الكالسيوم/الفسفور في العلف. لا تُفرط في الشعير لتجنب حصى المجاري البولية. وفّر الظل والماء البارد صيفاً.');
-  if (hasBoer)         recList.push('ماعز البور: حساس جداً للحرارة — ظل كامل وماء بارد دائماً. لا تُخرجه للرعي في حر النهار.');
+  if (hasBoer)         recList.push('ماعز البور: حساس للحرارة — ظل كامل وماء بارد دائماً. لا تُخرجه للرعي في حر النهار.');
   if (hasHybrid)       recList.push('الهجين (F1/F2): راقب BCS أسبوعياً. لا تترك الأم الهجينة تهزل تحت 2.5 لأن الجداء تتأثر مباشرة بحالة الأم.');
   if (recList.length === 0) recList.push('أضف حيوانات بسلالات محددة لتظهر هنا توصيات مخصصة للقطيع.');
 
@@ -710,106 +710,106 @@ async function exportPDF() {
       + '<span style="color:#f9a825;margin-left:6px;">&#9654;</span>' + r + '</td></tr>';
   }).join('');
 
-  /* ===== صفوف الحيوانات ===== */
+  /* ===== صفوف جدول الحيوانات ===== */
   var animalRows = active.map(function(a) {
     var isFemale = a.gender === 'أنثى';
     var gColor   = isFemale ? '#c2185b' : '#1565c0';
     var gSymbol  = isFemale ? '&#9792; أنثى' : '&#9794; ذكر';
     var photoCell = a.photo
       ? '<img src="' + a.photo + '" class="img-box" />'
-      : '<div style="width:80px;height:80px;background:#f3f4f6;border-radius:8px;line-height:80px;text-align:center;font-size:28px;">&#x1F410;</div>';
+      : '<div style="width:80px;height:80px;background:#f3f4f6;border-radius:8px;line-height:80px;text-align:center;font-size:28px;margin:0 auto;">&#x1F410;</div>';
     return '<tr>'
-      + '<td style="border:1px solid #ddd;padding:10px;text-align:center;">' + photoCell + '</td>'
-      + '<td style="border:1px solid #ddd;padding:10px;font-weight:900;">' + escHtml(a.name || 'بدون اسم') + '</td>'
-      + '<td style="border:1px solid #ddd;padding:10px;font-weight:900;color:' + gColor + ';">' + gSymbol + '</td>'
-      + '<td style="border:1px solid #ddd;padding:10px;">' + escHtml(a.breed || '') + '</td>'
-      + '<td style="border:1px solid #ddd;padding:10px;color:#2e7d32;font-weight:700;">' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '-') + '</td>'
+      + '<td style="text-align:center;">' + photoCell + '</td>'
+      + '<td style="font-weight:900;">' + escHtml(a.name || 'بدون اسم') + '</td>'
+      + '<td style="font-weight:900;color:' + gColor + ';">' + gSymbol + '</td>'
+      + '<td>' + escHtml(a.breed || '') + '</td>'
+      + '<td style="color:#2e7d32;font-weight:700;">' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '-') + '</td>'
       + '</tr>';
   }).join('');
 
-  var today = new Date().toLocaleDateString('ar', {year:'numeric',month:'long',day:'numeric'});
+  var today = new Date().toLocaleDateString('ar', {year:'numeric', month:'long', day:'numeric'});
 
-  /* ===== قالب HTML كامل ومستقل ===== */
+  /* ===== قالب HTML كامل ومستقل (Raw String) ===== */
   var htmlContent = '<!DOCTYPE html>'
     + '<html dir="rtl" lang="ar"><head><meta charset="UTF-8"/>'
+    + '<script src="https://cdn.tailwindcss.com"><\/script>'
     + '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">'
+    + '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">'
     + '<style>'
-    + 'body{font-family:"Cairo",Arial,sans-serif;background:white;padding:20px;width:1000px;margin:0 auto;color:black;}'
+    + 'body{font-family:"Cairo",sans-serif;background:white;padding:40px;width:1000px;margin:0 auto;color:black;}'
     + '.img-box{width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ccc;display:block;margin:0 auto;}'
-    + 'table{width:100%;border-collapse:collapse;margin-top:12px;}'
-    + 'th,td{border:1px solid #ddd;padding:12px;text-align:right;}'
-    + 'th{background:#f8f9fa;font-weight:900;color:#1b5e20;}'
-    + '.sec-title{font-size:16px;font-weight:900;color:#1b5e20;border-right:5px solid #4caf50;padding-right:10px;margin:24px 0 10px;}'
-    + '.stat-box{display:inline-block;width:30%;text-align:center;padding:14px;border-radius:8px;margin-left:2%;vertical-align:top;}'
-    + '.tree-box{display:inline-block;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;margin:4px;}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:20px;text-align:right;}'
+    + 'th,td{border:1px solid #ddd;padding:12px;}'
+    + 'th{background-color:#f8f9fa;font-weight:bold;}'
+    + '.sec{font-size:16px;font-weight:900;color:#1b5e20;border-right:5px solid #4caf50;padding-right:12px;margin:28px 0 12px;}'
+    + '.stat-card{display:inline-block;width:30%;text-align:center;padding:16px;border-radius:10px;margin-left:3%;vertical-align:top;}'
+    + '.tree-node{display:inline-block;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;margin:3px;}'
     + '</style></head><body>'
 
     /* ترويسة */
-    + '<div style="border-bottom:4px solid #2e7d32;padding-bottom:14px;margin-bottom:16px;">'
-    + '<div style="font-size:26px;font-weight:900;color:#1b5e20;">&#x1F410; مزرعة صادو — سيدي بوزيد</div>'
-    + '<div style="font-size:13px;color:#555;margin-top:6px;">تاريخ التقرير: <strong>' + today + '</strong>'
+    + '<div style="border-bottom:4px solid #2e7d32;padding-bottom:16px;margin-bottom:20px;">'
+    + '<div style="font-size:28px;font-weight:900;color:#1b5e20;">&#x1F410; مزرعة صادو &mdash; سيدي بوزيد</div>'
+    + '<div style="font-size:13px;color:#555;margin-top:6px;">'
+    + 'تاريخ التقرير: <strong>' + today + '</strong>'
     + ' &nbsp;|&nbsp; القطيع النشط: <strong>' + active.length + ' رأس</strong>'
-    + ' &nbsp;|&nbsp; إجمالي السجل: <strong>' + animals.length + ' رأس</strong></div>'
-    + '</div>'
+    + ' &nbsp;|&nbsp; إجمالي السجل: <strong>' + animals.length + ' رأس</strong>'
+    + '</div></div>'
 
     /* إحصائيات */
-    + '<div style="margin-bottom:24px;">'
-    + '<div class="stat-box" style="background:#fce4ec;border:2px solid #c2185b;">'
-    +   '<div style="font-size:30px;font-weight:900;color:#c2185b;">&#9792; ' + f + '</div>'
-    +   '<div style="font-size:13px;color:#555;">إناث نشطة</div></div>'
-    + '<div class="stat-box" style="background:#e3f2fd;border:2px solid #1565c0;">'
-    +   '<div style="font-size:30px;font-weight:900;color:#1565c0;">&#9794; ' + m + '</div>'
-    +   '<div style="font-size:13px;color:#555;">فحول نشطة</div></div>'
-    + '<div class="stat-box" style="background:#e8f5e9;border:2px solid #4caf50;">'
-    +   '<div style="font-size:30px;font-weight:900;color:#2e7d32;">' + animals.length + '</div>'
-    +   '<div style="font-size:13px;color:#555;">إجمالي السجل</div></div>'
+    + '<div style="margin-bottom:28px;">'
+    + '<div class="stat-card" style="background:#fce4ec;border:2px solid #c2185b;">'
+    +   '<div style="font-size:32px;font-weight:900;color:#c2185b;">&#9792; ' + f + '</div>'
+    +   '<div style="font-size:13px;color:#555;margin-top:4px;">إناث نشطة</div></div>'
+    + '<div class="stat-card" style="background:#e3f2fd;border:2px solid #1565c0;">'
+    +   '<div style="font-size:32px;font-weight:900;color:#1565c0;">&#9794; ' + m + '</div>'
+    +   '<div style="font-size:13px;color:#555;margin-top:4px;">فحول نشطة</div></div>'
+    + '<div class="stat-card" style="background:#e8f5e9;border:2px solid #4caf50;">'
+    +   '<div style="font-size:32px;font-weight:900;color:#2e7d32;">' + animals.length + '</div>'
+    +   '<div style="font-size:13px;color:#555;margin-top:4px;">إجمالي السجل</div></div>'
     + '</div>'
 
     /* شجرة التزاوج */
-    + '<div class="sec-title">&#x1F9EC; استراتيجية التزاوج</div>'
-    + '<table style="border-collapse:separate;border-spacing:8px;"><tr>'
-    + '<td style="border:none;width:40%;vertical-align:top;padding:0;">'
-    +   '<div style="text-align:center;">'
-    +   '<div class="tree-box" style="background:#f5f5f5;border:2px solid #9e9e9e;color:#333;">&#x1F410;&#x1F410; نواة عربي خالص</div>'
-    +   '<div style="font-size:18px;color:#999;margin:4px;">&#x2715; فحل دمشقي</div>'
-    +   '<div style="font-size:20px;color:#999;margin:4px;">&#x2B07;</div>'
-    +   '<div class="tree-box" style="background:#bbdefb;border:2px solid #1565c0;color:#0d47a1;">إناث الجيل الأول (F1) - 50% دمشقي</div>'
-    +   '</div>'
+    + '<div class="sec">&#x1F9EC; استراتيجية التزاوج</div>'
+    + '<table style="border-collapse:separate;border-spacing:10px;"><tr>'
+    + '<td style="border:none;width:38%;vertical-align:middle;text-align:center;">'
+    +   '<div class="tree-node" style="background:#f5f5f5;border:2px solid #9e9e9e;color:#333;">&#x1F410;&#x1F410; نواة عربي خالص</div>'
+    +   '<div style="font-size:20px;color:#999;margin:6px 0;">&#x2715; فحل دمشقي</div>'
+    +   '<div style="font-size:22px;color:#999;margin:4px 0;">&#x2B07;</div>'
+    +   '<div class="tree-node" style="background:#bbdefb;border:2px solid #1565c0;color:#0d47a1;">إناث الجيل الأول (F1)</div>'
     + '</td>'
-    + '<td style="border:none;width:60%;vertical-align:top;padding:0;">'
+    + '<td style="border:none;width:62%;vertical-align:top;">'
     +   '<table style="border-collapse:separate;border-spacing:8px;margin:0;"><tr>'
-    +   '<td style="border:none;text-align:center;vertical-align:top;padding:0;">'
-    +     '<div class="tree-box" style="background:#bbdefb;border:2px solid #1565c0;color:#0d47a1;display:block;">&#x1F535; خط الأمهات</div>'
+    +   '<td style="border:none;text-align:center;vertical-align:top;">'
+    +     '<div class="tree-node" style="background:#bbdefb;border:2px solid #1565c0;color:#0d47a1;display:block;margin-bottom:4px;">&#x1F535; خط الأمهات</div>'
     +     '<div style="font-size:16px;color:#999;margin:3px 0;">&#x2B07;</div>'
-    +     '<div class="tree-box" style="background:#bbdefb;border:2px solid #1565c0;color:#0d47a1;display:block;">دوران: عربي / دمشقي</div>'
+    +     '<div class="tree-node" style="background:#bbdefb;border:2px solid #1565c0;color:#0d47a1;display:block;margin-bottom:4px;">دوران: عربي / دمشقي</div>'
     +     '<div style="font-size:16px;color:#999;margin:3px 0;">&#x2B07;</div>'
-    +     '<div class="tree-box" style="background:#c8e6c9;border:2px solid #2e7d32;color:#1b5e20;display:block;">&#x1F4AA; بدائل صلبة دائمة</div>'
+    +     '<div class="tree-node" style="background:#c8e6c9;border:2px solid #2e7d32;color:#1b5e20;display:block;">&#x1F4AA; بدائل صلبة دائمة</div>'
     +   '</td>'
-    +   '<td style="border:none;text-align:center;vertical-align:top;padding:0;">'
-    +     '<div class="tree-box" style="background:#ffe0b2;border:2px solid #e65100;color:#bf360c;display:block;">&#x1F7E0; خط اللحم</div>'
+    +   '<td style="border:none;text-align:center;vertical-align:top;">'
+    +     '<div class="tree-node" style="background:#ffe0b2;border:2px solid #e65100;color:#bf360c;display:block;margin-bottom:4px;">&#x1F7E0; خط اللحم</div>'
     +     '<div style="font-size:16px;color:#999;margin:3px 0;">&#x2B07;</div>'
-    +     '<div class="tree-box" style="background:#ffe0b2;border:2px solid #e65100;color:#bf360c;display:block;">&#x2715; فحل بور (Boer)</div>'
+    +     '<div class="tree-node" style="background:#ffe0b2;border:2px solid #e65100;color:#bf360c;display:block;margin-bottom:4px;">&#x2715; فحل بور (Boer)</div>'
     +     '<div style="font-size:16px;color:#999;margin:3px 0;">&#x2B07;</div>'
-    +     '<div class="tree-box" style="background:#ffcdd2;border:2px solid #c62828;color:#b71c1c;display:block;">&#x1F969; كل النتاج يُباع</div>'
+    +     '<div class="tree-node" style="background:#ffcdd2;border:2px solid #c62828;color:#b71c1c;display:block;">&#x1F969; كل النتاج يُباع</div>'
     +   '</td>'
     +   '</tr></table>'
-    + '</td>'
-    + '</tr></table>'
+    + '</td></tr></table>'
 
     /* سجل القطيع */
-    + '<div class="sec-title">&#x1F4CB; سجل القطيع النشط بالصور</div>'
+    + '<div class="sec">&#x1F4CB; سجل القطيع النشط بالصور</div>'
     + (active.length > 0
         ? '<table><thead><tr>'
           + '<th style="width:100px;">الصورة</th>'
           + '<th>الاسم / الرقم</th>'
-          + '<th style="width:120px;">الجنس</th>'
+          + '<th style="width:130px;">الجنس</th>'
           + '<th>السلالة</th>'
-          + '<th style="width:140px;">تاريخ الدخول</th>'
+          + '<th style="width:150px;">تاريخ الدخول</th>'
           + '</tr></thead><tbody>' + animalRows + '</tbody></table>'
-        : '<p style="color:#999;text-align:center;padding:24px;">لا يوجد حيوانات نشطة مسجّلة</p>')
+        : '<p style="color:#999;text-align:center;padding:30px;">لا يوجد حيوانات نشطة مسجّلة</p>')
 
     /* توصيات */
-    + '<div class="sec-title">&#x1F4A1; توصيات القطيع الحالية</div>'
+    + '<div class="sec">&#x1F4A1; توصيات القطيع الحالية</div>'
     + '<table style="border:2px solid #ffe082;"><tbody>' + recsRows + '</tbody></table>'
 
     + '</body></html>';
