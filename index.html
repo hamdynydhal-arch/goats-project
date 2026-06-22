@@ -159,6 +159,31 @@
     .tab-btn.active { border-color: #2e7d32; background: #e8f5e9; color: #2e7d32; }
 
     @media (min-width: 480px) { .main-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
+    /* ===== شجرة الأنساب (Pedigree Tree) ===== */
+    .pedigree-wrap { background: #f9fbe7; border: 2px solid #aed581; border-radius: 14px; padding: 14px; margin-top: 12px; }
+    .pedigree-title { font-size: 14px; font-weight: 900; color: #33691e; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .ped-tree { display: flex; flex-direction: column; align-items: center; gap: 0; }
+    .ped-row { display: flex; justify-content: center; gap: 10px; width: 100%; }
+    .ped-node { border-radius: 10px; padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; min-width: 100px; max-width: 140px; flex: 1; }
+    .ped-node.male   { background: #e3f2fd; border: 2px solid #1565c0; color: #0d47a1; }
+    .ped-node.female { background: #fce4ec; border: 2px solid #c2185b; color: #880e4f; }
+    .ped-node.self   { background: #e8f5e9; border: 3px solid #2e7d32; color: #1b5e20; }
+    .ped-node.unknown{ background: #f5f5f5; border: 2px dashed #9e9e9e; color: #757575; }
+    .ped-node .pn-label { font-size: 11px; font-weight: 400; margin-top: 2px; opacity: 0.8; }
+    .ped-connector { display: flex; justify-content: center; gap: 10px; width: 100%; margin: 3px 0; }
+    .ped-line { flex: 1; display: flex; flex-direction: column; align-items: center; }
+    .ped-line::before { content: ''; display: block; width: 2px; height: 14px; background: #aed581; }
+    .ped-v { display: flex; justify-content: center; }
+    .ped-v::before { content: '▼'; font-size: 12px; color: #aed581; }
+
+    /* ===== تحذير زواج الأقارب ===== */
+    .inbreeding-warn { background: #fff3e0; border: 2px solid #f57c00; border-radius: 12px; padding: 10px 14px; margin-top: 10px; }
+    .inbreeding-warn .iw-title { font-size: 13px; font-weight: 900; color: #e65100; margin-bottom: 6px; }
+    .inbreeding-warn .iw-item  { font-size: 12px; color: #bf360c; margin-bottom: 3px; }
+
+    /* ===== النبذة التاريخية ===== */
+    .history-box { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 14px; color: #555; line-height: 1.6; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -416,6 +441,25 @@
       </select>
     </div>
 
+    <div style="margin-bottom:14px;">
+      <label style="font-size:18px;font-weight:700;display:block;margin-bottom:8px;"><i class="fa-solid fa-mars" style="color:#1565c0;"></i> الأب</label>
+      <select class="form-select" id="modal-father">
+        <option value="">خارجي / غير معروف</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:18px;font-weight:700;display:block;margin-bottom:8px;"><i class="fa-solid fa-venus" style="color:#c2185b;"></i> الأم</label>
+      <select class="form-select" id="modal-mother">
+        <option value="">خارجي / غير معروف</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:18px;font-weight:700;display:block;margin-bottom:8px;"><i class="fa-solid fa-scroll" style="color:#795548;"></i> السجل التاريخي / المصدر</label>
+      <textarea class="form-input" id="modal-history" rows="3" placeholder="من أين أتى هذا الحيوان؟ حالته الصحية السابقة، ملاحظات مهمة..." style="resize:vertical;min-height:80px;"></textarea>
+    </div>
+
     <button class="btn-primary" id="save-btn" onclick="saveAnimal()" disabled>
       <i class="fa-solid fa-floppy-disk"></i> حفظ الحيوان
     </button>
@@ -549,13 +593,13 @@ function renderRegister() {
       if (active.length === 0) {
         html += '<div class="empty-state"><div class="e-icon">🐐</div><p>لا يوجد حيوانات بعد<br/>اضغط على زر الإضافة</p></div>';
       } else {
-        active.forEach(function(a) { html += renderAnimalCard(a, false); });
+        active.forEach(function(a) { html += renderAnimalCard(a, false, animals); });
       }
     } else {
       if (archived.length === 0) {
         html += '<div class="empty-state"><div class="e-icon">📦</div><p>لا يوجد حيوانات في الأرشيف</p></div>';
       } else {
-        archived.forEach(function(a) { html += renderAnimalCard(a, true); });
+        archived.forEach(function(a) { html += renderAnimalCard(a, true, animals); });
       }
     }
     html += '</div>';
@@ -570,7 +614,8 @@ function genderIcon(gender) {
   return '';
 }
 
-function renderAnimalCard(a, archived) {
+function renderAnimalCard(a, archived, allAnimals) {
+  allAnimals = allAnimals || [];
   var statusLabel = {active:'✅ نشط', sold:'💰 مباع', slaughtered:'🔪 مذبوح', dead:'💀 نافق'}[a.status] || a.status;
   var statusCls   = 'status-' + (a.status||'active');
   var genderCls   = a.gender==='أنثى' ? 'badge-female' : a.gender==='ذكر' ? 'badge-male' : 'badge-kid';
@@ -579,6 +624,36 @@ function renderAnimalCard(a, archived) {
     ? '<img class="animal-photo" src="' + a.photo + '" alt="صورة الحيوان" />'
     : '<div class="animal-photo-placeholder">🐐</div>';
 
+  /* نسب الأبوين */
+  var parentsHtml = '';
+  var hasFather = a.fatherName && a.fatherName !== 'خارجي / غير معروف';
+  var hasMother = a.motherName && a.motherName !== 'خارجي / غير معروف';
+  if (hasFather || hasMother) {
+    parentsHtml = '<div style="font-size:13px;color:#555;margin-bottom:6px;">';
+    if (hasFather) parentsHtml += '<i class="fa-solid fa-mars" style="color:#1565c0;"></i> ' + escHtml(a.fatherName) + '&nbsp;&nbsp;';
+    if (hasMother) parentsHtml += '<i class="fa-solid fa-venus" style="color:#c2185b;"></i> ' + escHtml(a.motherName);
+    parentsHtml += '</div>';
+  }
+
+  /* شجرة الأنساب */
+  var pedigreeHtml = (hasFather || hasMother) ? renderPedigreeTree(a, allAnimals) : '';
+
+  /* تحذيرات زواج الأقارب (للحيوانات النشطة فقط) */
+  var warnHtml = '';
+  if (!archived) {
+    var warnings = getInbreedingWarnings(a, allAnimals);
+    if (warnings.length > 0) {
+      warnHtml = '<div class="inbreeding-warn"><div class="iw-title"><i class="fa-solid fa-triangle-exclamation"></i> تحذير وراثي — منع زواج الأقارب</div>'
+        + warnings.map(function(w){ return '<div class="iw-item">' + w + '</div>'; }).join('')
+        + '</div>';
+    }
+  }
+
+  /* النبذة التاريخية */
+  var histHtml = a.historyText
+    ? '<div class="history-box"><i class="fa-solid fa-scroll" style="color:#795548;margin-left:6px;"></i>' + escHtml(a.historyText) + '</div>'
+    : '';
+
   return '<div class="animal-card ' + (archived?'archived':'active-animal') + '">'
     + photoHtml
     + '<div class="animal-body">'
@@ -586,8 +661,12 @@ function renderAnimalCard(a, archived) {
     + '<div class="animal-id">' + escHtml(a.name||'بدون اسم') + '</div>'
     + '<span class="animal-badge ' + genderCls + '">' + genderIcon(a.gender) + ' ' + (a.gender||'') + '</span>'
     + '</div>'
-    + '<div style="margin-bottom:8px;"><span style="color:#666;font-size:15px;">' + (a.breed||'') + '</span></div>'
+    + '<div style="margin-bottom:4px;"><span style="color:#666;font-size:15px;">' + (a.breed||'') + '</span></div>'
+    + parentsHtml
     + '<span class="status-badge ' + statusCls + '">' + statusLabel + dateOut + '</span>'
+    + histHtml
+    + pedigreeHtml
+    + warnHtml
     + '<div style="display:flex;gap:8px;margin-top:12px;">'
     + '<button onclick="openStatusModal(\'' + a.id + '\',\'' + escHtml(a.name||'بدون اسم') + '\')" style="flex:1;background:#fff3e0;color:#e65100;border:2px solid #f57c00;border-radius:10px;padding:11px;font-size:16px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:700;">🔄 تغيير الحالة</button>'
     + '</div></div></div>';
@@ -597,16 +676,119 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 function switchTab(tab) { currentTab = tab; renderRegister(); }
 
+/* ===== شجرة الأنساب (Pure CSS) ===== */
+function renderPedigreeTree(a, allAnimals) {
+  var byId = {};
+  allAnimals.forEach(function(x){ byId[x.id] = x; });
+
+  function nodeHtml(id, nameLabel, role) {
+    var animal = id ? byId[id] : null;
+    var cls = 'unknown';
+    var icon = '🐐';
+    var label = nameLabel || 'غير معروف';
+    if (animal) {
+      cls = animal.gender === 'ذكر' ? 'male' : 'female';
+      icon = animal.gender === 'ذكر' ? '♂' : '♀';
+      label = escHtml(animal.name);
+    } else if (!nameLabel || nameLabel === 'خارجي / غير معروف') {
+      label = role;
+    }
+    return '<div class="ped-node ' + cls + '">'
+      + icon + ' ' + label
+      + '<div class="pn-label">' + role + '</div>'
+      + '</div>';
+  }
+
+  var father = a.fatherId ? byId[a.fatherId] : null;
+  var mother = a.motherId ? byId[a.motherId] : null;
+
+  /* الجيل الثاني: أجداد */
+  var gfRow = '';
+  var hasGP = (father && (father.fatherId || father.motherId)) || (mother && (mother.fatherId || mother.motherId));
+  if (hasGP) {
+    var gff = father && father.fatherId ? byId[father.fatherId] : null;
+    var gfm = father && father.motherId ? byId[father.motherId] : null;
+    var gmf = mother && mother.fatherId ? byId[mother.fatherId] : null;
+    var gmm = mother && mother.motherId ? byId[mother.motherId] : null;
+    gfRow = '<div class="ped-row" style="gap:6px;">'
+      + nodeHtml(gff?gff.id:'', gff?gff.name:(father?'':'—'), 'جد الأب')
+      + nodeHtml(gfm?gfm.id:'', gfm?gfm.name:(father?'':'—'), 'جدة الأب')
+      + nodeHtml(gmf?gmf.id:'', gmf?gmf.name:(mother?'':'—'), 'جد الأم')
+      + nodeHtml(gmm?gmm.id:'', gmm?gmm.name:(mother?'':'—'), 'جدة الأم')
+      + '</div>'
+      + '<div class="ped-connector"><div class="ped-line"></div><div class="ped-line"></div><div class="ped-line"></div><div class="ped-line"></div></div>';
+  }
+
+  var fatherLabel = a.fatherName && a.fatherName !== 'خارجي / غير معروف' ? a.fatherName : (father ? father.name : null);
+  var motherLabel = a.motherName && a.motherName !== 'خارجي / غير معروف' ? a.motherName : (mother ? mother.name : null);
+
+  return '<div class="pedigree-wrap">'
+    + '<div class="pedigree-title"><i class="fa-solid fa-diagram-project"></i> شجرة الأنساب</div>'
+    + '<div class="ped-tree">'
+    + gfRow
+    + '<div class="ped-row">'
+    + nodeHtml(a.fatherId, fatherLabel, 'الأب')
+    + nodeHtml(a.motherId, motherLabel, 'الأم')
+    + '</div>'
+    + '<div class="ped-connector"><div class="ped-line"></div><div class="ped-line"></div></div>'
+    + '<div class="ped-v"></div>'
+    + '<div class="ped-row"><div class="ped-node self">🐐 ' + escHtml(a.name||'هذا الحيوان') + '<div class="pn-label">الحيوان الحالي</div></div></div>'
+    + '</div></div>';
+}
+
+/* ===== كشف زواج الأقارب ===== */
+function getInbreedingWarnings(a, allAnimals) {
+  var warnings = [];
+  if (a.fatherId) {
+    var f = allAnimals.find(function(x){ return x.id === a.fatherId; });
+    if (f) warnings.push('🚫 يُمنع التزاوج مع الأب: <strong>' + escHtml(f.name) + '</strong>');
+  }
+  if (a.motherId) {
+    var m = allAnimals.find(function(x){ return x.id === a.motherId; });
+    if (m) warnings.push('🚫 يُمنع التزاوج مع الأم: <strong>' + escHtml(m.name) + '</strong>');
+  }
+  /* الإخوة من نفس الأب أو الأم */
+  var siblings = allAnimals.filter(function(x) {
+    if (x.id === a.id) return false;
+    return (a.fatherId && x.fatherId && a.fatherId === x.fatherId)
+        || (a.motherId && x.motherId && a.motherId === x.motherId);
+  });
+  if (siblings.length > 0) {
+    warnings.push('⚠️ يُمنع التزاوج مع الإخوة: <strong>' + siblings.map(function(s){ return escHtml(s.name); }).join('، ') + '</strong>');
+  }
+  return warnings;
+}
+
 // ===== Modal إضافة =====
 function openModal() {
   pendingPhoto = null; selectedGender = '';
   document.getElementById('modal-name').value = '';
   document.getElementById('modal-breed').selectedIndex = 0;
+  document.getElementById('modal-history').value = '';
   document.getElementById('photo-preview').style.display = 'none';
   document.getElementById('photo-label').style.display = 'flex';
   document.getElementById('save-btn').disabled = true;
   document.getElementById('btn-female').classList.remove('selected');
   document.getElementById('btn-male').classList.remove('selected');
+
+  /* تعبئة قوائم الأب والأم من القطيع */
+  dbGetAll(function(animals) {
+    var active = animals.filter(function(a){ return a.status === 'active'; });
+    var males   = active.filter(function(a){ return a.gender === 'ذكر'; });
+    var females = active.filter(function(a){ return a.gender === 'أنثى'; });
+
+    var fSel = document.getElementById('modal-father');
+    var mSel = document.getElementById('modal-mother');
+    fSel.innerHTML = '<option value="">خارجي / غير معروف</option>';
+    mSel.innerHTML = '<option value="">خارجي / غير معروف</option>';
+    males.forEach(function(a) {
+      fSel.innerHTML += '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.breed||'') + ')</option>';
+    });
+    females.forEach(function(a) {
+      mSel.innerHTML += '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.breed||'') + ')</option>';
+    });
+  });
+
   document.getElementById('add-modal').classList.add('open');
 }
 
@@ -639,12 +821,22 @@ function checkSaveReady() {
 }
 
 function saveAnimal() {
-  var name  = document.getElementById('modal-name').value.trim() || 'حيوان جديد';
-  var breed = document.getElementById('modal-breed').value;
-  var id    = Date.now().toString();
+  var name    = document.getElementById('modal-name').value.trim() || 'حيوان جديد';
+  var breed   = document.getElementById('modal-breed').value;
+  var history = document.getElementById('modal-history').value.trim();
+  var fSel    = document.getElementById('modal-father');
+  var mSel    = document.getElementById('modal-mother');
+  var fatherId   = fSel.value || '';
+  var fatherName = fatherId ? fSel.options[fSel.selectedIndex].text : 'خارجي / غير معروف';
+  var motherId   = mSel.value || '';
+  var motherName = motherId ? mSel.options[mSel.selectedIndex].text : 'خارجي / غير معروف';
+  var id = Date.now().toString();
   var animal = {
     id: id, name: name, gender: selectedGender, breed: breed,
     photo: pendingPhoto, status: 'active',
+    fatherId: fatherId, fatherName: fatherName,
+    motherId: motherId, motherName: motherName,
+    historyText: history,
     dateAdded: new Date().toISOString(), dateRemoved: null
   };
   dbPut(animal, function() {
@@ -710,7 +902,74 @@ async function exportPDF() {
       + '<span style="color:#f9a825;margin-left:6px;">&#9654;</span>' + r + '</td></tr>';
   }).join('');
 
-  /* ===== صفوف جدول الحيوانات ===== */
+  /* ===== بناء قاموس البحث السريع ===== */
+  var byId = {};
+  animals.forEach(function(x){ byId[x.id] = x; });
+
+  /* ===== دالة بناء شجرة الأنساب للـ PDF (HTML نصي) ===== */
+  function pdfPedigreeNode(id, fallbackName, role) {
+    var animal = id ? byId[id] : null;
+    var bg = '#f5f5f5'; var border = '#9e9e9e'; var color = '#555';
+    var icon = '?'; var label = fallbackName || 'غير معروف';
+    if (animal) {
+      label = animal.name;
+      if (animal.gender === 'ذكر')   { bg='#e3f2fd'; border='#1565c0'; color='#0d47a1'; icon='&#9794;'; }
+      else                            { bg='#fce4ec'; border='#c2185b'; color='#880e4f'; icon='&#9792;'; }
+    }
+    return '<td style="text-align:center;padding:4px;border:none;"><div style="background:' + bg + ';border:2px solid ' + border + ';border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;color:' + color + ';display:inline-block;min-width:90px;">'
+      + icon + ' ' + escHtml(label)
+      + '<div style="font-size:10px;font-weight:400;opacity:.8;margin-top:2px;">' + role + '</div></div></td>';
+  }
+
+  function pdfPedigreeTree(a) {
+    var hasFather = a.fatherId || (a.fatherName && a.fatherName !== 'خارجي / غير معروف');
+    var hasMother = a.motherId || (a.motherName && a.motherName !== 'خارجي / غير معروف');
+    if (!hasFather && !hasMother) return '';
+
+    var father = a.fatherId ? byId[a.fatherId] : null;
+    var mother = a.motherId ? byId[a.motherId] : null;
+
+    /* الأجداد */
+    var gpRow = '';
+    var hasGP = (father && (father.fatherId || father.motherId)) || (mother && (mother.fatherId || mother.motherId));
+    if (hasGP) {
+      var gff = father && father.fatherId ? byId[father.fatherId] : null;
+      var gfm = father && father.motherId ? byId[father.motherId] : null;
+      var gmf = mother && mother.fatherId ? byId[mother.fatherId] : null;
+      var gmm = mother && mother.motherId ? byId[mother.motherId] : null;
+      gpRow = '<tr>'
+        + pdfPedigreeNode(gff?gff.id:'', gff?gff.name:'—', 'جد الأب')
+        + pdfPedigreeNode(gfm?gfm.id:'', gfm?gfm.name:'—', 'جدة الأب')
+        + '<td style="border:none;"></td>'
+        + pdfPedigreeNode(gmf?gmf.id:'', gmf?gmf.name:'—', 'جد الأم')
+        + pdfPedigreeNode(gmm?gmm.id:'', gmm?gmm.name:'—', 'جدة الأم')
+        + '</tr><tr><td colspan="5" style="border:none;text-align:center;color:#aed581;font-size:16px;padding:2px 0;">&#x2193;&#x2193;</td></tr>';
+    }
+
+    return '<div style="background:#f9fbe7;border:2px solid #aed581;border-radius:8px;padding:10px;margin-top:8px;">'
+      + '<div style="font-size:12px;font-weight:900;color:#33691e;margin-bottom:8px;">&#x1F333; شجرة الأنساب</div>'
+      + '<table style="border-collapse:collapse;width:100%;"><tbody>'
+      + gpRow
+      + '<tr>'
+      + pdfPedigreeNode(a.fatherId, a.fatherName, 'الأب')
+      + '<td style="border:none;text-align:center;font-size:18px;color:#aed581;">&#x2197;</td>'
+      + '<td style="text-align:center;padding:4px;border:none;"><div style="background:#e8f5e9;border:3px solid #2e7d32;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:900;color:#1b5e20;display:inline-block;min-width:90px;">&#x1F410; ' + escHtml(a.name||'الحيوان') + '<div style="font-size:10px;font-weight:400;">الحيوان الحالي</div></div></td>'
+      + '<td style="border:none;text-align:center;font-size:18px;color:#aed581;">&#x2196;</td>'
+      + pdfPedigreeNode(a.motherId, a.motherName, 'الأم')
+      + '</tr></tbody></table></div>';
+  }
+
+  /* ===== تحذيرات زواج الأقارب للـ PDF ===== */
+  function pdfInbreedingWarnings(a) {
+    var warns = getInbreedingWarnings(a, animals);
+    if (warns.length === 0) return '';
+    return '<div style="background:#fff3e0;border:2px solid #f57c00;border-radius:8px;padding:8px 12px;margin-top:8px;">'
+      + '<div style="font-size:12px;font-weight:900;color:#e65100;margin-bottom:4px;">&#x26A0; تحذير وراثي — منع زواج الأقارب</div>'
+      + warns.map(function(w){ return '<div style="font-size:11px;color:#bf360c;margin-bottom:2px;">' + w + '</div>'; }).join('')
+      + '</div>';
+  }
+
+  /* ===== صفوف جدول الحيوانات (مع شجرة وتاريخ وتحذيرات) ===== */
   var animalRows = active.map(function(a) {
     var isFemale = a.gender === 'أنثى';
     var gColor   = isFemale ? '#c2185b' : '#1565c0';
@@ -718,13 +977,18 @@ async function exportPDF() {
     var photoCell = a.photo
       ? '<img src="' + a.photo + '" class="img-box" />'
       : '<div style="width:80px;height:80px;background:#f3f4f6;border-radius:8px;line-height:80px;text-align:center;font-size:28px;margin:0 auto;">&#x1F410;</div>';
+
+    var extraCols = pdfPedigreeTree(a) + pdfInbreedingWarnings(a)
+      + (a.historyText ? '<div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:6px;padding:8px;margin-top:8px;font-size:11px;color:#555;white-space:pre-wrap;"><i>&#x1F4DC; السجل التاريخي:</i> ' + escHtml(a.historyText) + '</div>' : '');
+
     return '<tr>'
-      + '<td style="text-align:center;">' + photoCell + '</td>'
-      + '<td style="font-weight:900;">' + escHtml(a.name || 'بدون اسم') + '</td>'
-      + '<td style="font-weight:900;color:' + gColor + ';">' + gSymbol + '</td>'
-      + '<td>' + escHtml(a.breed || '') + '</td>'
-      + '<td style="color:#2e7d32;font-weight:700;">' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '-') + '</td>'
-      + '</tr>';
+      + '<td style="text-align:center;vertical-align:top;width:90px;">' + photoCell + '</td>'
+      + '<td style="font-weight:900;vertical-align:top;">' + escHtml(a.name || 'بدون اسم') + '</td>'
+      + '<td style="font-weight:900;color:' + gColor + ';vertical-align:top;width:110px;">' + gSymbol + '</td>'
+      + '<td style="vertical-align:top;">' + escHtml(a.breed || '') + '</td>'
+      + '<td style="color:#2e7d32;font-weight:700;vertical-align:top;width:120px;">' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '-') + '</td>'
+      + '</tr>'
+      + (extraCols ? '<tr><td colspan="5" style="padding:0 8px 12px;border-top:none;">' + extraCols + '</td></tr>' : '');
   }).join('');
 
   var today = new Date().toLocaleDateString('ar', {year:'numeric', month:'long', day:'numeric'});
