@@ -693,22 +693,21 @@ async function exportPDF() {
   var f = active.filter(function(a){ return a.gender === 'أنثى'; }).length;
   var m = active.filter(function(a){ return a.gender === 'ذكر'; }).length;
 
-  /* ===== توصيات ديناميكية بناءً على السلالات المسجّلة ===== */
+  /* ===== توصيات ديناميكية ===== */
   var hasArabiFemale  = active.some(function(a){ return a.gender === 'أنثى' && (a.breed||'').includes('عربي'); });
   var hasDamascusMale = active.some(function(a){ return a.gender === 'ذكر'  && (a.breed||'').includes('دمشقي'); });
   var hasBoer         = active.some(function(a){ return (a.breed||'').includes('بور'); });
   var hasHybrid       = active.some(function(a){ return (a.breed||'').includes('هجين'); });
-
   var recList = [];
-  if (hasArabiFemale)  recList.push('الإناث العربيات: طبّق التغذية التحفيزية (300&ndash;400 غ/رأس/يوم من المركّز) قبل موسم التلقيح بـ15 يوماً وبعده لتحسين الإباضة وعدد الجداء.');
-  if (hasDamascusMale) recList.push('الفحل الدمشقي: راقب نسبة الكالسيوم/الفسفور في العلف ولا تزِد نسبة الشعير للفحل لتجنب حصى المجاري البولية. وفّر الظل والماء البارد صيفاً.');
-  if (hasBoer)         recList.push('ماعز البور: حساس جداً للحرارة — ظل كامل وماء بارد دائماً. لا تُخرجه للرعي في حرّ النهار.');
-  if (hasHybrid)       recList.push('الهجين (F1/F2): راقب BCS أسبوعياً. لا تترك الأمّ الهجينة تهزل تحت 2.5 لأن الجداء تتأثر مباشرةً بحالة الأمّ.');
+  if (hasArabiFemale)  recList.push('الإناث العربيات: طبّق التغذية التحفيزية (300-400 غ/رأس/يوم) قبل التلقيح بـ15 يوماً وبعده لتحسين الإباضة وعدد الجداء.');
+  if (hasDamascusMale) recList.push('الفحل الدمشقي: راقب نسبة الكالسيوم/الفسفور في العلف. لا تُفرط في الشعير لتجنب حصى المجاري البولية. وفّر الظل والماء البارد صيفاً.');
+  if (hasBoer)         recList.push('ماعز البور: حساس جداً للحرارة — ظل كامل وماء بارد دائماً. لا تُخرجه للرعي في حر النهار.');
+  if (hasHybrid)       recList.push('الهجين (F1/F2): راقب BCS أسبوعياً. لا تترك الأم الهجينة تهزل تحت 2.5 لأن الجداء تتأثر مباشرة بحالة الأم.');
   if (recList.length === 0) recList.push('أضف حيوانات بسلالات محددة لتظهر هنا توصيات مخصصة للقطيع.');
 
-  var recsHTML = recList.map(function(r, i) {
-    return '<tr><td style="padding:7px 10px;font-size:11px;font-weight:700;color:#4a2600;border-bottom:1px solid #ffe082;">'
-      + '<span style="color:#f9a825;font-size:13px;">&#9654;</span>&nbsp;' + r + '</td></tr>';
+  var recsHTML = recList.map(function(r) {
+    return '<div style="background:#fffde7;border-right:4px solid #f9a825;padding:8px 12px;margin-bottom:6px;font-size:12px;font-weight:700;color:#4a2600;">'
+      + '<span style="color:#f9a825;">&#9654;</span> ' + r + '</div>';
   }).join('');
 
   /* ===== بطاقات الحيوانات — جدول 3 أعمدة ===== */
@@ -717,116 +716,140 @@ async function exportPDF() {
     var slice = active.slice(i, i + 3);
     animalRows += '<tr>';
     slice.forEach(function(a) {
-      var gColor  = a.gender === 'أنثى' ? '#c2185b' : '#1565c0';
-      var gSymbol = a.gender === 'أنثى' ? '&#9792;' : '&#9794;';
+      var isFemale = a.gender === 'أنثى';
+      var gColor   = isFemale ? '#c2185b' : '#1565c0';
+      var gSymbol  = isFemale ? '&#9792;' : '&#9794;';
       var photoHtml = a.photo
-        ? '<img src="' + a.photo + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 6px;" />'
-        : '<div style="width:80px;height:80px;background:#f3f4f6;border-radius:8px;text-align:center;line-height:80px;font-size:32px;margin:0 auto 6px;">&#x1F410;</div>';
-      animalRows += '<td style="width:33.3%;vertical-align:top;padding:7px;border:none;">'
-        + '<div style="border:1.5px solid #4caf50;background:#ffffff;padding:10px;text-align:center;">'
+        ? '<img src="' + a.photo + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 8px;" />'
+        : '<div style="width:80px;height:80px;background:#f3f4f6;border-radius:8px;line-height:80px;text-align:center;font-size:30px;margin:0 auto 8px;">&#x1F410;</div>';
+      animalRows +=
+        '<td style="width:33.3%;vertical-align:top;padding:6px;border:none;">'
+        + '<div style="border:2px solid #4caf50;background:#fff;padding:10px;text-align:center;">'
         + photoHtml
         + '<div style="font-size:13px;font-weight:900;color:#111;margin-bottom:3px;">' + escHtml(a.name || 'بدون اسم') + '</div>'
         + '<div style="font-size:13px;font-weight:900;color:' + gColor + ';margin-bottom:3px;">' + gSymbol + ' ' + escHtml(a.gender || '') + '</div>'
         + '<div style="font-size:11px;color:#555;margin-bottom:2px;">' + escHtml(a.breed || '') + '</div>'
-        + '<div style="font-size:10px;color:#2e7d32;font-weight:700;">دخل: ' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '&mdash;') + '</div>'
+        + '<div style="font-size:10px;color:#2e7d32;font-weight:700;">دخل: ' + (a.dateAdded ? new Date(a.dateAdded).toLocaleDateString('ar') : '-') + '</div>'
         + '</div></td>';
     });
     for (var j = slice.length; j < 3; j++) {
-      animalRows += '<td style="width:33.3%;padding:7px;border:none;"></td>';
+      animalRows += '<td style="width:33.3%;padding:6px;border:none;"></td>';
     }
     animalRows += '</tr>';
   }
 
-  /* ===== قالب HTML معزول — 800px RTL ===== */
+  /* ===== شجرة التزاوج (جدول بسيط) ===== */
+  var treeHTML =
+    '<table style="width:100%;border-collapse:separate;border-spacing:8px;">'
+    + '<tr>'
+    + '<td style="width:50%;vertical-align:top;">'
+    +   '<div style="background:#f5f5f5;border:2px solid #9e9e9e;border-radius:8px;padding:8px;text-align:center;font-size:11px;font-weight:700;color:#333;margin-bottom:6px;">&#x1F410;&#x1F410; نواة عربي خالص</div>'
+    +   '<div style="text-align:center;font-size:16px;color:#999;margin-bottom:6px;">&#x2715; فحل دمشقي</div>'
+    +   '<div style="text-align:center;font-size:16px;color:#999;margin-bottom:6px;">&#x2B07;</div>'
+    +   '<div style="background:#bbdefb;border:2px solid #1565c0;border-radius:8px;padding:8px;text-align:center;font-size:11px;font-weight:700;color:#0d47a1;">إناث الجيل الأول (F1) - 50% دمشقي</div>'
+    + '</td>'
+    + '<td style="width:50%;vertical-align:top;">'
+    +   '<table style="width:100%;border-collapse:separate;border-spacing:6px;">'
+    +   '<tr>'
+    +   '<td style="text-align:center;vertical-align:top;">'
+    +     '<div style="background:#bbdefb;border:2px solid #1565c0;border-radius:6px;padding:6px;font-size:10px;font-weight:700;color:#0d47a1;margin-bottom:4px;">&#x1F535; خط الأمهات</div>'
+    +     '<div style="text-align:center;font-size:13px;color:#999;">&#x2B07;</div>'
+    +     '<div style="background:#bbdefb;border:2px solid #1565c0;border-radius:6px;padding:6px;font-size:10px;font-weight:700;color:#0d47a1;margin-bottom:4px;">دوران: عربي / دمشقي</div>'
+    +     '<div style="text-align:center;font-size:13px;color:#999;">&#x2B07;</div>'
+    +     '<div style="background:#c8e6c9;border:2px solid #2e7d32;border-radius:6px;padding:6px;font-size:10px;font-weight:700;color:#1b5e20;">&#x1F4AA; بدائل صلبة دائمة</div>'
+    +   '</td>'
+    +   '<td style="text-align:center;vertical-align:top;">'
+    +     '<div style="background:#ffe0b2;border:2px solid #e65100;border-radius:6px;padding:6px;font-size:10px;font-weight:700;color:#bf360c;margin-bottom:4px;">&#x1F7E0; خط اللحم</div>'
+    +     '<div style="text-align:center;font-size:13px;color:#999;">&#x2B07;</div>'
+    +     '<div style="background:#ffe0b2;border:2px solid #e65100;border-radius:6px;padding:6px;font-size:10px;font-weight:700;color:#bf360c;margin-bottom:4px;">&#x2715; فحل بور</div>'
+    +     '<div style="text-align:center;font-size:13px;color:#999;">&#x2B07;</div>'
+    +     '<div style="background:#ffcdd2;border:2px solid #c62828;border-radius:6px;padding:6px;font-size:10px;font-weight:700;color:#b71c1c;">&#x1F969; كل النتاج يُباع</div>'
+    +   '</td>'
+    +   '</tr></table>'
+    + '</td>'
+    + '</tr></table>';
+
   var today = new Date().toLocaleDateString('ar', {year:'numeric',month:'long',day:'numeric'});
-  var printHTML = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"/>'
-    + '<style>'
-    + '@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap");'
-    + '*{box-sizing:border-box;margin:0;padding:0;}'
-    + 'body{font-family:"Cairo",Arial,sans-serif;direction:rtl;background:#fff;color:#111;'
-    +      'width:800px !important;max-width:800px !important;padding:28px;font-size:13px;line-height:1.6;}'
-    + 'h1{font-size:22px;font-weight:900;color:#1b5e20;border-bottom:4px solid #2e7d32;padding-bottom:10px;margin-bottom:8px;}'
-    + '.meta{font-size:12px;color:#555;margin-bottom:20px;}'
-    + '.sec{font-size:15px;font-weight:900;color:#1b5e20;border-right:5px solid #4caf50;'
-    +      'padding-right:10px;margin:22px 0 10px;}'
-    + 'table{border-collapse:collapse;width:100%;}'
-    + '.stat-tbl{border-spacing:10px;border-collapse:separate;}'
-    + '.stat-cell{background:#e8f5e9;border:2px solid #4caf50;padding:14px 10px;text-align:center;width:33%;}'
-    + '.stat-num{font-size:28px;font-weight:900;}'
-    + '.stat-lbl{font-size:12px;color:#555;margin-top:2px;}'
-    + '.rec-tbl{background:#fffde7;border:2px solid #ffe082;border-collapse:collapse;}'
-    + '</style></head><body>'
+
+  /* ===== القالب الكامل ===== */
+  var innerHTML =
+    '<div dir="rtl" style="font-family:Cairo,Arial,sans-serif;color:#111;font-size:13px;line-height:1.6;padding:28px;">'
 
     /* ترويسة */
-    + '<h1>&#x1F410; سجل قطيع الماعز &mdash; منزل بوزيان، سيدي بوزيد</h1>'
-    + '<div class="meta">تاريخ الاستخراج: <strong>' + today + '</strong>'
-    + '&nbsp;&nbsp;|&nbsp;&nbsp;القطيع النشط: <strong>' + active.length + ' رأس</strong>'
-    + '&nbsp;&nbsp;|&nbsp;&nbsp;إجمالي السجل: <strong>' + animals.length + ' رأس</strong></div>'
+    + '<div style="border-bottom:4px solid #2e7d32;padding-bottom:12px;margin-bottom:10px;">'
+    + '<div style="font-size:24px;font-weight:900;color:#1b5e20;">&#x1F410; مزرعة صادو — سيدي بوزيد</div>'
+    + '<div style="font-size:12px;color:#555;margin-top:4px;">تاريخ التقرير: <strong>' + today + '</strong>'
+    + ' &nbsp;|&nbsp; القطيع النشط: <strong>' + active.length + ' رأس</strong>'
+    + ' &nbsp;|&nbsp; إجمالي السجل: <strong>' + animals.length + ' رأس</strong></div>'
+    + '</div>'
 
     /* إحصائيات */
-    + '<table class="stat-tbl"><tr>'
-    + '<td class="stat-cell"><div class="stat-num" style="color:#c2185b;">&#9792; ' + f + '</div><div class="stat-lbl">إناث نشطة</div></td>'
-    + '<td class="stat-cell"><div class="stat-num" style="color:#1565c0;">&#9794; ' + m + '</div><div class="stat-lbl">فحول نشطة</div></td>'
-    + '<td class="stat-cell"><div class="stat-num" style="color:#333;">' + animals.length + '</div><div class="stat-lbl">إجمالي السجل</div></td>'
+    + '<table style="width:100%;border-collapse:separate;border-spacing:10px;margin-bottom:20px;"><tr>'
+    + '<td style="background:#fce4ec;border:2px solid #c2185b;padding:14px;text-align:center;width:33%;">'
+    +   '<div style="font-size:26px;font-weight:900;color:#c2185b;">&#9792; ' + f + '</div>'
+    +   '<div style="font-size:12px;color:#555;">إناث نشطة</div></td>'
+    + '<td style="background:#e3f2fd;border:2px solid #1565c0;padding:14px;text-align:center;width:33%;">'
+    +   '<div style="font-size:26px;font-weight:900;color:#1565c0;">&#9794; ' + m + '</div>'
+    +   '<div style="font-size:12px;color:#555;">فحول نشطة</div></td>'
+    + '<td style="background:#e8f5e9;border:2px solid #4caf50;padding:14px;text-align:center;width:33%;">'
+    +   '<div style="font-size:26px;font-weight:900;color:#2e7d32;">' + animals.length + '</div>'
+    +   '<div style="font-size:12px;color:#555;">إجمالي السجل</div></td>'
     + '</tr></table>'
 
-    /* سجل الحيوانات */
+    /* شجرة التزاوج */
+    + '<div style="font-size:15px;font-weight:900;color:#1b5e20;border-right:5px solid #4caf50;padding-right:10px;margin:0 0 12px;">&#x1F9EC; استراتيجية التزاوج</div>'
+    + treeHTML
+
+    /* سجل القطيع */
+    + '<div style="font-size:15px;font-weight:900;color:#1b5e20;border-right:5px solid #4caf50;padding-right:10px;margin:20px 0 12px;">&#x1F4CB; سجل القطيع النشط بالصور</div>'
     + (active.length > 0
-        ? '<div class="sec">&#x1F4CB; سجل القطيع النشط بالصور</div>'
-          + '<table style="border-collapse:collapse;"><tbody>' + animalRows + '</tbody></table>'
-        : '<div class="sec">&#x1F4CB; سجل القطيع</div>'
-          + '<p style="color:#999;text-align:center;padding:24px;">لا يوجد حيوانات نشطة مسجّلة</p>')
+        ? '<table style="width:100%;border-collapse:collapse;"><tbody>' + animalRows + '</tbody></table>'
+        : '<p style="color:#999;text-align:center;padding:24px;">لا يوجد حيوانات نشطة مسجّلة</p>')
 
-    /* توصيات ديناميكية */
-    + '<div class="sec">&#x1F4A1; توصيات القطيع الحالية</div>'
-    + '<table class="rec-tbl"><tbody>' + recsHTML + '</tbody></table>'
+    /* توصيات */
+    + '<div style="font-size:15px;font-weight:900;color:#1b5e20;border-right:5px solid #4caf50;padding-right:10px;margin:20px 0 12px;">&#x1F4A1; توصيات القطيع الحالية</div>'
+    + recsHTML
 
-    + '</body></html>';
+    + '</div>';
 
-  /* ===== iframe معزول خارج الشاشة ===== */
-  var iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:absolute;top:0;left:-9999px;width:800px;height:1px;border:none;visibility:visible;';
-  document.body.appendChild(iframe);
-  var idoc = iframe.contentDocument || iframe.contentWindow.document;
-  idoc.open(); idoc.write(printHTML); idoc.close();
-  iframe.style.height = idoc.body.scrollHeight + 200 + 'px';
+  /* ===== LTR Wrapper Hack لمنع RTL Shift في html2canvas ===== */
+  var wrapper = document.createElement('div');
+  wrapper.setAttribute('dir', 'ltr');
+  wrapper.style.cssText = [
+    'position:absolute',
+    'top:0',
+    'left:-9999px',
+    'width:1000px',
+    'background:white',
+    'visibility:visible',
+    'z-index:-1'
+  ].join(';');
+  wrapper.innerHTML = innerHTML;
+  document.body.appendChild(wrapper);
 
-  /* انتظر تحميل الصور */
-  var imgs = Array.from(idoc.querySelectorAll('img'));
+  /* ===== انتظار تحميل الصور بالكامل ===== */
+  var imgs = Array.from(wrapper.querySelectorAll('img'));
   await Promise.all(imgs.map(function(img) {
-    if (img.complete && img.naturalHeight > 0) return Promise.resolve();
-    return new Promise(function(res) { img.onload = res; img.onerror = res; setTimeout(res, 6000); });
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise(function(res) { img.onload = res; img.onerror = res; setTimeout(res, 8000); });
   }));
-
   await new Promise(function(res) { setTimeout(res, 500); });
 
-  var dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+  var opt = {
+    margin:      10,
+    filename:    'sijil-alqatie.pdf',
+    image:       { type: 'jpeg', quality: 1.0 },
+    html2canvas: { scale: 2, useCORS: true, windowWidth: 1000, x: 0, scrollY: 0 },
+    jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
   try {
-    await html2pdf().set({
-      margin:      10,
-      filename:    'sijil-alqatie-' + dateStr + '.pdf',
-      image:       { type: 'jpeg', quality: 1.0 },
-      html2canvas: {
-        scale:           3,
-        useCORS:         true,
-        allowTaint:      true,
-        windowWidth:     800,
-        scrollY:         0,
-        letterRendering: true,
-        logging:         false,
-        onclone: function(clonedDoc) {
-          clonedDoc.body.style.display = 'block';
-          clonedDoc.body.style.width   = '800px';
-        }
-      },
-      jsPDF:     { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
-    }).from(idoc.body).save();
+    await html2pdf().set(opt).from(wrapper).save();
   } catch(e) {
     alert('خطأ في التصدير: ' + e.message);
   }
 
-  document.body.removeChild(iframe);
+  document.body.removeChild(wrapper);
   if (btn) {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> تحميل التقرير (PDF)';
