@@ -310,32 +310,31 @@
   </div>
   <div class="big-warning"><div class="warn-icon">🔴</div><div class="warn-text">القاعدة الذهبية</div><p style="font-size:21px;font-weight:700;margin-top:8px;color:#c62828;">لا يُلقّح أي فحل بناتِه أبداً!</p><p style="font-size:18px;margin-top:8px;color:#333;">اشترِ فحلاً جديداً غير قريب كل 2–3 سنوات من مزرعة مختلفة</p></div>
 
-  <!-- محاكي التزاوج التفاعلي -->
-  <div class="card" style="border:2px solid #7c4dff;border-radius:14px;padding:14px;margin-top:10px;">
-    <div style="font-size:16px;font-weight:900;color:#6200ea;margin-bottom:12px;">🎮 تمرين عملي: جرب التهجين بنفسك</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div>
-        <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px;">سلالة الأم</label>
-        <select id="sim-dam" onchange="runSimulator()" style="width:100%;padding:8px;border-radius:8px;border:2px solid #ce93d8;font-size:13px;font-family:inherit;">
-          <option value="">اختر سلالة الأم</option>
-          <option value="عربي">عربي (بلدي)</option>
-          <option value="f1">أنثى F1 هجينة (50% دمشقي)</option>
-          <option value="دمشقي">دمشقية خالصة</option>
-          <option value="بور">أنثى بور</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px;">سلالة الفحل</label>
-        <select id="sim-sire" onchange="runSimulator()" style="width:100%;padding:8px;border-radius:8px;border:2px solid #ce93d8;font-size:13px;font-family:inherit;">
-          <option value="">اختر سلالة الفحل</option>
-          <option value="نيوبي">نيوبي (Anglo-Nubian) 🥇</option>
-          <option value="بور">بور (Boer) 🥩</option>
-          <option value="دمشقي">دمشقي (Damascus) ⭐</option>
-          <option value="عربي">عربي (بلدي)</option>
-        </select>
+  <!-- محرك الوراثة الافتراضي اللامتناهي -->
+  <div id="sandbox-wrap" style="border:2px solid #7c4dff;border-radius:14px;padding:14px;margin-top:10px;background:#fafafa;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+      <div style="font-size:15px;font-weight:900;color:#6200ea;">🧬 ملعب الوراثة اللامتناهي</div>
+      <div style="display:flex;gap:6px;">
+        <div id="sim-timer" style="background:#e8eaf6;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;color:#3949ab;">⏳ 0 سنة</div>
+        <button onclick="simReset()" style="background:#ef9a9a;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:#b71c1c;">↺ إعادة</button>
       </div>
     </div>
-    <div id="sim-result" style="display:none;border-radius:10px;padding:12px;font-size:13px;line-height:1.7;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:3px;">🐐 الأنثى</label>
+        <select id="sim-dam" style="width:100%;padding:7px;border-radius:8px;border:2px solid #ce93d8;font-size:12px;font-family:inherit;"></select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:3px;">♂ الفحل</label>
+        <select id="sim-sire" style="width:100%;padding:7px;border-radius:8px;border:2px solid #90caf9;font-size:12px;font-family:inherit;"></select>
+      </div>
+    </div>
+    <button onclick="simMate()" style="width:100%;background:linear-gradient(135deg,#7c4dff,#512da8);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:inherit;">⚡ توليد الجيل القادم</button>
+    <div id="sim-result" style="display:none;border-radius:10px;padding:11px;font-size:13px;line-height:1.8;margin-bottom:10px;"></div>
+    <div id="sim-log-wrap" style="display:none;">
+      <div style="font-size:12px;font-weight:900;color:#555;margin-bottom:6px;">📜 سجل التزاوجات</div>
+      <div id="sim-log" style="max-height:200px;overflow-y:auto;font-size:11px;line-height:1.7;"></div>
+    </div>
   </div>
 </div>
 
@@ -796,55 +795,216 @@ function renderAnimalCard(a, archived, allAnimals) {
 
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-/* ===== محاكي التزاوج التفاعلي ===== */
-function runSimulator() {
-  var dam = document.getElementById('sim-dam').value;
-  var sire = document.getElementById('sim-sire').value;
-  var box = document.getElementById('sim-result');
-  if (!dam || !sire) { box.style.display='none'; return; }
+/* ===================================================================
+   محرك الوراثة الافتراضي اللامتناهي — Infinite Genetics Sandbox
+   =================================================================== */
+var SIM = { herd: [], time: 0, log: [], nextId: 1 };
 
+var SIM_G0 = [
+  { key: 'عربي',    label: 'عربي بلدي' },
+  { key: 'دمشقي',  label: 'دمشقي (شامي)' },
+  { key: 'ألبين',  label: 'ألبين (Alpine)' },
+  { key: 'نيوبي',  label: 'نيوبي (Anglo-Nubian)' },
+  { key: 'بور',    label: 'بور (Boer)' },
+  { key: 'مالطي',  label: 'مالطي (Maltese)' }
+];
+
+function simBloodStr(blood) {
+  var entries = Object.keys(blood).map(function(k){ return {k:k, v:blood[k]}; });
+  entries.sort(function(a,b){ return b.v - a.v; });
+  return entries.filter(function(e){ return e.v >= 0.005; })
+    .map(function(e){ return Math.round(e.v*100) + '% ' + e.k; }).join(' | ');
+}
+
+function simMergeBlood(b1, b2) {
+  var out = {};
+  Object.keys(b1).forEach(function(k){ out[k] = (out[k]||0) + b1[k] * 0.5; });
+  Object.keys(b2).forEach(function(k){ out[k] = (out[k]||0) + b2[k] * 0.5; });
+  return out;
+}
+
+function simGetAncestors(animalId, visited) {
+  visited = visited || {};
+  if (visited[animalId]) return visited;
+  visited[animalId] = true;
+  var a = SIM.herd.filter(function(x){ return x.id === animalId; })[0];
+  if (a && a.parents) {
+    a.parents.forEach(function(pid){ simGetAncestors(pid, visited); });
+  }
+  return visited;
+}
+
+function simCheckInbreeding(sireId, damId) {
+  var sireAncestors = simGetAncestors(sireId, {});
+  var damAncestors = simGetAncestors(damId, {});
+  /* تحقق مباشر: هل أحدهما والد الآخر؟ */
+  var sireAnimal = SIM.herd.filter(function(x){ return x.id===sireId; })[0];
+  var damAnimal  = SIM.herd.filter(function(x){ return x.id===damId; })[0];
+  if (sireAnimal && damAnimal) {
+    if (damAnimal.parents.indexOf(sireId) !== -1) return 'parent'; /* أب مع ابنته */
+    if (sireAnimal.parents.indexOf(damId) !== -1) return 'parent'; /* أم مع ابنها */
+    var sireP = sireAnimal.parents;
+    var damP  = damAnimal.parents;
+    if (sireP.length && damP.length &&
+        sireP.some(function(p){ return damP.indexOf(p) !== -1; })) return 'sibling'; /* أخوة شقيقة */
+  }
+  /* تحقق من الأجداد المشتركة */
+  var shared = Object.keys(sireAncestors).filter(function(id){
+    return damAncestors[parseInt(id)] || damAncestors[id];
+  });
+  /* استثناء G0 من حساب القرابة (حيوانات السلالة النقية المتكررة ليست قرابة) */
+  var sharedNonG0 = shared.filter(function(id){
+    var a = SIM.herd.filter(function(x){ return x.id === parseInt(id); })[0];
+    return a && a.gen > 0;
+  });
+  if (sharedNonG0.length > 0) return 'related';
+  return 'ok';
+}
+
+function simCountDistinctBreeds(blood) {
+  return Object.keys(blood).filter(function(k){ return blood[k] >= 0.15; }).length;
+}
+
+function simEvaluate(sire, dam, offBlood, inbStatus) {
   var bg, border, icon, title, body;
-
-  if (dam === 'f1' && sire === 'نيوبي') {
-    bg='#e8f5e9'; border='#2e7d32'; icon='🏆'; title='ممتاز جداً — تهجين ثلاثي متفجر!';
-    body='الجداء ستأخذ <strong>الحليب من الأم الهجينة</strong> + <strong>اللحم والضخامة من الأب النيوبي</strong>. هذا الخيار يعطيك أسرع نمو ممكن للبيع. <strong>الجداء تكبر بسرعة كبيرة وتُباع بسعر جيد.</strong>';
-  } else if (dam === 'f1' && sire === 'بور') {
-    bg='#e8f5e9'; border='#388e3c'; icon='✅'; title='جيد جداً — خط اللحم التجاري';
-    body='الجداء ستنمو جيداً وتُباع للذبح. الفحل البور يعطي لحماً وفيراً. <strong>هذا الخيار مربح لكن النيوبي أسرع نمواً منه.</strong>';
-  } else if (dam === 'f1' && sire === 'دمشقي') {
-    bg='#fff8e1'; border='#f57f17'; icon='⚠️'; title='مقبول — لكن راجع القرابة أولاً!';
-    body='الجداء ستكون هجينة ثانية (F2). مقبول إذا لم يكن الفحل الدمشقي أباً أو جداً للأنثى. <strong>تأكد أولاً من عدم القرابة في السجل قبل التلقيح.</strong>';
-  } else if (dam === 'عربي' && sire === 'دمشقي') {
-    bg='#e3f2fd'; border='#1565c0'; icon='⭐'; title='ممتاز — هذا هو الخط الأصيل!';
-    body='الناتج إناث F1 (50% دمشقي) — هذه هي <strong>مصنع الأمهات</strong> في القطيع. الجداء تولد أكبر حجماً ونمواً من العربي الخالص. <strong>احتفظ بأفضل الإناث لتجديد القطيع.</strong>';
-  } else if (dam === 'عربي' && sire === 'بور') {
-    bg='#fff3e0'; border='#ef6c00'; icon='🥩'; title='جيد — للخط التجاري مباشرة';
-    body='الجداء ستنمو جيداً للبيع. لكن الأفضل أن تُلقَّح الأنثى العربية بالدمشقي أولاً لتنتج F1، ثم تلقَّح F1 بالبور. <strong>ذلك يعطيك نمواً أفضل في الجيل الثاني.</strong>';
-  } else if (dam === 'عربي' && sire === 'عربي') {
-    bg='#fff9c4'; border='#f9a825'; icon='🟡'; title='نتيجة عادية — لا ربح في التسمين';
-    body='الجداء ستكون عربية خالصة. <strong>بطيئة النمو، صغيرة الحجم.</strong> هذا الخيار لا يربح في التسمين التجاري. استخدمه فقط للحفاظ على نواة العربي النقي.';
-  } else if (dam === 'عربي' && sire === 'نيوبي') {
-    bg='#e8f5e9'; border='#2e7d32'; icon='✅'; title='جيد جداً — F1 نيوبي';
-    body='الجداء ستكون هجينة F1 (50% نيوبي). جيدة للنمو والبيع. يمكنك بعدها تلقيح الإناث الناتجة بفحل بور لتحصل على تهجين ثلاثي ممتاز.';
-  } else if (sire === 'عربي' && dam !== 'عربي') {
-    bg='#ffebee'; border='#c62828'; icon='🔴'; title='خيار ضعيف — لا يُنصح به';
-    body='الفحل العربي يُضعف الإنتاجية في هذا التزاوج. <strong>استخدم فحلاً نيوبي أو بور أو دمشقي بدلاً منه</strong> للحصول على نمو أسرع وربح أكبر.';
-  } else if (dam === 'دمشقي' && sire === 'بور') {
-    bg='#e8f5e9'; border='#388e3c'; icon='✅'; title='جيد — لحم وحجم ممتاز';
-    body='الجداء ستنمو بسرعة عالية للذبح. تزاوج جيد للخط التجاري.';
-  } else if (dam === 'بور' && sire === 'بور') {
-    bg='#e8f5e9'; border='#388e3c'; icon='✅'; title='جيد — خط اللحم الخالص';
-    body='جداء بور خالصة ذات نمو سريع جداً. مناسب للتسمين التجاري المكثف.';
+  if (inbStatus === 'parent') {
+    bg='#ffebee'; border='#b71c1c'; icon='🔴';
+    title='تحذير كارثي — زواج أقارب مباشر!';
+    body='هذا التزاوج بين أب وابنته (أو أم وابنها). <strong>النتيجة: تشوهات، إجهاض، ضعف مناعة.</strong> نسبة الدم الموروث مرتفعة جداً من طرف واحد بخسارة كاملة لقوة الهجين. <strong>لا تُنفَّذ هذه العملية في الواقع أبداً.</strong>';
+  } else if (inbStatus === 'sibling') {
+    bg='#fff3e0'; border='#e65100'; icon='⚠️';
+    title='تحذير — تزاوج أخوة!';
+    body='الفحل والأنثى يشتركان في أحد الوالدين. <strong>هذا يُفقد قوة الهجين ويُضعف المناعة.</strong> استخدم فحلاً من خارج القطيع.';
+  } else if (inbStatus === 'related') {
+    bg='#fff8e1'; border='#f57f17'; icon='🟡';
+    title='تحذير — يوجد جد مشترك';
+    body='الفحل والأنثى يشتركان في جد واحد على الأقل. يُفضَّل استخدام فحل غير مقرب للحفاظ على قوة الهجين.';
   } else {
-    bg='#f3e5f5'; border='#7b1fa2'; icon='💡'; title='تزاوج مقبول';
-    body='هذا التزاوج مقبول. تأكد دائماً من عدم وجود قرابة بين الأم والفحل قبل التلقيح.';
+    var distinctBreeds = simCountDistinctBreeds(offBlood);
+    var sireKeys = Object.keys(sire.blood).filter(function(k){ return sire.blood[k] >= 0.5; });
+    var damKeys  = Object.keys(dam.blood).filter(function(k){ return dam.blood[k] >= 0.5; });
+    var mainSire = sireKeys[0] || '';
+    var mainDam  = damKeys[0] || '';
+    var isUpgrading = mainSire && mainDam && mainSire === mainDam && sire.gen === 0 && dam.gen > 0;
+
+    if (distinctBreeds >= 3) {
+      bg='#e8f5e9'; border='#2e7d32'; icon='🏆';
+      title='ممتاز — تهجين ثلاثي متفجر!';
+      body='الجداء تحمل دم ثلاث سلالات أو أكثر. <strong>نمو سريع جداً + مناعة حديدية + قوة هجين مزدوجة.</strong> هذا أفضل تزاوج ممكن للإنتاج التجاري.';
+    } else if (isUpgrading) {
+      bg='#e3f2fd'; border='#1565c0'; icon='🔵';
+      title='استيعاب سلالة — Upgrading';
+      body='نسبة سلالة <strong>' + mainSire + '</strong> ترتفع في الجيل الجديد. استخدام نفس السلالة المميزة (فحل غير مقرب) يُقرّب القطيع شيئاً فشيئاً من السلالة النقية الممتازة.';
+    } else if (sire.gen === 0 && dam.gen === 0 && mainSire !== mainDam && mainSire && mainDam) {
+      bg='#e3f2fd'; border='#1565c0'; icon='⭐';
+      title='هجين جيل أول (F1) — ممتاز!';
+      body='تزاوج سلالتين نقيتين مختلفتين يُنتج <strong>قوة هجين كاملة.</strong> الجداء ستفوق الأبوين في النمو والمقاومة.';
+    } else if (sire.gen === 0 && dam.gen > 0) {
+      bg='#e8f5e9'; border='#388e3c'; icon='✅';
+      title='جيد — تهجين تجاري مربح';
+      body='فحل نقي مع أنثى هجينة. الجداء ستحمل <strong>' + simBloodStr(offBlood) + '</strong>. نمو جيد للبيع.';
+    } else {
+      bg='#f3e5f5'; border='#7b1fa2'; icon='💡';
+      title='تزاوج مقبول';
+      body='الجداء ستحمل <strong>' + simBloodStr(offBlood) + '</strong>. تأكد من غياب القرابة دائماً.';
+    }
+  }
+  return { bg:bg, border:border, icon:icon, title:title, body:body };
+}
+
+function simRebuildSelects() {
+  var sireEl = document.getElementById('sim-sire');
+  var damEl  = document.getElementById('sim-dam');
+  if (!sireEl || !damEl) return;
+  var sv = sireEl.value, dv = damEl.value;
+  var males   = SIM.herd.filter(function(x){ return x.gender==='M'; });
+  var females = SIM.herd.filter(function(x){ return x.gender==='F'; });
+  function buildOptions(list, sel) {
+    return '<option value="">اختر...</option>' + list.map(function(a){
+      return '<option value="' + a.id + '"' + (String(a.id)===sel?' selected':'') + '>' + escHtml(a.name) + (a.gen>0?' (الجيل '+a.gen+')':'') + '</option>';
+    }).join('');
+  }
+  sireEl.innerHTML = buildOptions(males, sv);
+  damEl.innerHTML  = buildOptions(females, dv);
+}
+
+function simRender() {
+  document.getElementById('sim-timer').textContent = '⏳ ' + SIM.time.toFixed(1) + ' سنة';
+  simRebuildSelects();
+  var logEl = document.getElementById('sim-log');
+  var logWrap = document.getElementById('sim-log-wrap');
+  if (logEl) {
+    if (SIM.log.length === 0) {
+      logWrap.style.display = 'none';
+    } else {
+      logWrap.style.display = 'block';
+      logEl.innerHTML = SIM.log.slice().reverse().map(function(e,i){
+        return '<div style="border-bottom:1px solid #eee;padding:4px 0;">'
+          + '<span style="color:#7b1fa2;font-weight:700;">#' + (SIM.log.length-i) + '</span> '
+          + escHtml(e.sire) + ' ✕ ' + escHtml(e.dam)
+          + ' → <strong>' + escHtml(e.offMale) + '</strong> + <strong>' + escHtml(e.offFemale) + '</strong>'
+          + '<br/><span style="color:#555;font-size:10px;">' + escHtml(e.bloodStr) + '</span></div>';
+      }).join('');
+    }
+  }
+}
+
+function simMate() {
+  var sireId = parseInt(document.getElementById('sim-sire').value);
+  var damId  = parseInt(document.getElementById('sim-dam').value);
+  if (!sireId || !damId) { alert('اختر الفحل والأنثى أولاً'); return; }
+  if (sireId === damId) { alert('لا يمكن تزويج الحيوان مع نفسه'); return; }
+
+  var sire = SIM.herd.filter(function(x){ return x.id===sireId; })[0];
+  var dam  = SIM.herd.filter(function(x){ return x.id===damId; })[0];
+
+  var inbStatus = simCheckInbreeding(sireId, damId);
+  var offBlood  = simMergeBlood(sire.blood, dam.blood);
+  var offGen    = Math.max(sire.gen, dam.gen) + 1;
+  var ev        = simEvaluate(sire, dam, offBlood, inbStatus);
+
+  /* رقم الجيل للتسمية */
+  var genLabel = 'G' + offGen;
+  var maleId   = SIM.nextId++;
+  var femaleId = SIM.nextId++;
+  var bloodStr = simBloodStr(offBlood);
+  var maleName   = genLabel + '-ذكر-' + maleId;
+  var femaleName = genLabel + '-أنثى-' + femaleId;
+
+  if (inbStatus !== 'parent') {
+    /* نضيف الجيل الجديد للقطيع فقط إذا لم يكن أب-ابنة */
+    SIM.herd.push({ id:maleId,   name:maleName,   gen:offGen, gender:'M', blood:offBlood, parents:[sireId,damId] });
+    SIM.herd.push({ id:femaleId, name:femaleName, gen:offGen, gender:'F', blood:offBlood, parents:[sireId,damId] });
+    SIM.time += 1.5;
+    SIM.log.push({ sire:sire.name, dam:dam.name, offMale:maleName, offFemale:femaleName, bloodStr:bloodStr });
   }
 
+  var box = document.getElementById('sim-result');
   box.style.display = 'block';
-  box.style.background = bg;
-  box.style.border = '2px solid ' + border;
-  box.innerHTML = '<div style="font-size:22px;margin-bottom:4px;">' + icon + ' <strong>' + title + '</strong></div>'
-    + '<div style="color:#333;">' + body + '</div>';
+  box.style.background = ev.bg;
+  box.style.border = '2px solid ' + ev.border;
+  box.innerHTML = '<div style="font-size:16px;font-weight:900;margin-bottom:6px;">' + ev.icon + ' ' + escHtml(ev.title) + '</div>'
+    + '<div style="color:#333;font-size:12px;line-height:1.7;">' + ev.body + '</div>'
+    + (inbStatus === 'parent' ? '' :
+      '<div style="margin-top:8px;padding:7px;background:rgba(0,0,0,0.04);border-radius:8px;font-size:12px;">'
+      + '🧬 <strong>نسب الدم:</strong> ' + escHtml(bloodStr) + '<br/>'
+      + '📅 <strong>الجيل:</strong> G' + offGen + ' &nbsp;|&nbsp; '
+      + '👨 <strong>ذكر:</strong> ' + escHtml(maleName) + ' &nbsp;|&nbsp; '
+      + '👩 <strong>أنثى:</strong> ' + escHtml(femaleName)
+      + '</div>');
+
+  simRender();
+}
+
+function simReset() {
+  SIM.herd = []; SIM.time = 0; SIM.log = []; SIM.nextId = 1;
+  SIM_G0.forEach(function(b) {
+    var blood = {}; blood[b.key] = 1;
+    SIM.herd.push({ id:SIM.nextId++, name:b.label+' (ذكر)',  gen:0, gender:'M', blood:blood, parents:[] });
+    SIM.herd.push({ id:SIM.nextId++, name:b.label+' (أنثى)', gen:0, gender:'F', blood:blood, parents:[] });
+  });
+  document.getElementById('sim-result').style.display = 'none';
+  simRender();
 }
 
 function switchTab(tab) { currentTab = tab; renderRegister(); }
@@ -1603,6 +1763,7 @@ window.addEventListener('load', function() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
   }
+  simReset();
 });
 </script>
 </body>
