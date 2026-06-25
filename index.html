@@ -309,6 +309,34 @@
     </ul>
   </div>
   <div class="big-warning"><div class="warn-icon">🔴</div><div class="warn-text">القاعدة الذهبية</div><p style="font-size:21px;font-weight:700;margin-top:8px;color:#c62828;">لا يُلقّح أي فحل بناتِه أبداً!</p><p style="font-size:18px;margin-top:8px;color:#333;">اشترِ فحلاً جديداً غير قريب كل 2–3 سنوات من مزرعة مختلفة</p></div>
+
+  <!-- محاكي التزاوج التفاعلي -->
+  <div class="card" style="border:2px solid #7c4dff;border-radius:14px;padding:14px;margin-top:10px;">
+    <div style="font-size:16px;font-weight:900;color:#6200ea;margin-bottom:12px;">🎮 تمرين عملي: جرب التهجين بنفسك</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div>
+        <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px;">سلالة الأم</label>
+        <select id="sim-dam" onchange="runSimulator()" style="width:100%;padding:8px;border-radius:8px;border:2px solid #ce93d8;font-size:13px;font-family:inherit;">
+          <option value="">اختر سلالة الأم</option>
+          <option value="عربي">عربي (بلدي)</option>
+          <option value="f1">أنثى F1 هجينة (50% دمشقي)</option>
+          <option value="دمشقي">دمشقية خالصة</option>
+          <option value="بور">أنثى بور</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px;">سلالة الفحل</label>
+        <select id="sim-sire" onchange="runSimulator()" style="width:100%;padding:8px;border-radius:8px;border:2px solid #ce93d8;font-size:13px;font-family:inherit;">
+          <option value="">اختر سلالة الفحل</option>
+          <option value="نيوبي">نيوبي (Anglo-Nubian) 🥇</option>
+          <option value="بور">بور (Boer) 🥩</option>
+          <option value="دمشقي">دمشقي (Damascus) ⭐</option>
+          <option value="عربي">عربي (بلدي)</option>
+        </select>
+      </div>
+    </div>
+    <div id="sim-result" style="display:none;border-radius:10px;padding:12px;font-size:13px;line-height:1.7;"></div>
+  </div>
 </div>
 
 <!-- الدورة -->
@@ -768,6 +796,57 @@ function renderAnimalCard(a, archived, allAnimals) {
 
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+/* ===== محاكي التزاوج التفاعلي ===== */
+function runSimulator() {
+  var dam = document.getElementById('sim-dam').value;
+  var sire = document.getElementById('sim-sire').value;
+  var box = document.getElementById('sim-result');
+  if (!dam || !sire) { box.style.display='none'; return; }
+
+  var bg, border, icon, title, body;
+
+  if (dam === 'f1' && sire === 'نيوبي') {
+    bg='#e8f5e9'; border='#2e7d32'; icon='🏆'; title='ممتاز جداً — تهجين ثلاثي متفجر!';
+    body='الجداء ستأخذ <strong>الحليب من الأم الهجينة</strong> + <strong>اللحم والضخامة من الأب النيوبي</strong>. هذا الخيار يعطيك أسرع نمو ممكن للبيع. <strong>الجداء تكبر بسرعة كبيرة وتُباع بسعر جيد.</strong>';
+  } else if (dam === 'f1' && sire === 'بور') {
+    bg='#e8f5e9'; border='#388e3c'; icon='✅'; title='جيد جداً — خط اللحم التجاري';
+    body='الجداء ستنمو جيداً وتُباع للذبح. الفحل البور يعطي لحماً وفيراً. <strong>هذا الخيار مربح لكن النيوبي أسرع نمواً منه.</strong>';
+  } else if (dam === 'f1' && sire === 'دمشقي') {
+    bg='#fff8e1'; border='#f57f17'; icon='⚠️'; title='مقبول — لكن راجع القرابة أولاً!';
+    body='الجداء ستكون هجينة ثانية (F2). مقبول إذا لم يكن الفحل الدمشقي أباً أو جداً للأنثى. <strong>تأكد أولاً من عدم القرابة في السجل قبل التلقيح.</strong>';
+  } else if (dam === 'عربي' && sire === 'دمشقي') {
+    bg='#e3f2fd'; border='#1565c0'; icon='⭐'; title='ممتاز — هذا هو الخط الأصيل!';
+    body='الناتج إناث F1 (50% دمشقي) — هذه هي <strong>مصنع الأمهات</strong> في القطيع. الجداء تولد أكبر حجماً ونمواً من العربي الخالص. <strong>احتفظ بأفضل الإناث لتجديد القطيع.</strong>';
+  } else if (dam === 'عربي' && sire === 'بور') {
+    bg='#fff3e0'; border='#ef6c00'; icon='🥩'; title='جيد — للخط التجاري مباشرة';
+    body='الجداء ستنمو جيداً للبيع. لكن الأفضل أن تُلقَّح الأنثى العربية بالدمشقي أولاً لتنتج F1، ثم تلقَّح F1 بالبور. <strong>ذلك يعطيك نمواً أفضل في الجيل الثاني.</strong>';
+  } else if (dam === 'عربي' && sire === 'عربي') {
+    bg='#fff9c4'; border='#f9a825'; icon='🟡'; title='نتيجة عادية — لا ربح في التسمين';
+    body='الجداء ستكون عربية خالصة. <strong>بطيئة النمو، صغيرة الحجم.</strong> هذا الخيار لا يربح في التسمين التجاري. استخدمه فقط للحفاظ على نواة العربي النقي.';
+  } else if (dam === 'عربي' && sire === 'نيوبي') {
+    bg='#e8f5e9'; border='#2e7d32'; icon='✅'; title='جيد جداً — F1 نيوبي';
+    body='الجداء ستكون هجينة F1 (50% نيوبي). جيدة للنمو والبيع. يمكنك بعدها تلقيح الإناث الناتجة بفحل بور لتحصل على تهجين ثلاثي ممتاز.';
+  } else if (sire === 'عربي' && dam !== 'عربي') {
+    bg='#ffebee'; border='#c62828'; icon='🔴'; title='خيار ضعيف — لا يُنصح به';
+    body='الفحل العربي يُضعف الإنتاجية في هذا التزاوج. <strong>استخدم فحلاً نيوبي أو بور أو دمشقي بدلاً منه</strong> للحصول على نمو أسرع وربح أكبر.';
+  } else if (dam === 'دمشقي' && sire === 'بور') {
+    bg='#e8f5e9'; border='#388e3c'; icon='✅'; title='جيد — لحم وحجم ممتاز';
+    body='الجداء ستنمو بسرعة عالية للذبح. تزاوج جيد للخط التجاري.';
+  } else if (dam === 'بور' && sire === 'بور') {
+    bg='#e8f5e9'; border='#388e3c'; icon='✅'; title='جيد — خط اللحم الخالص';
+    body='جداء بور خالصة ذات نمو سريع جداً. مناسب للتسمين التجاري المكثف.';
+  } else {
+    bg='#f3e5f5'; border='#7b1fa2'; icon='💡'; title='تزاوج مقبول';
+    body='هذا التزاوج مقبول. تأكد دائماً من عدم وجود قرابة بين الأم والفحل قبل التلقيح.';
+  }
+
+  box.style.display = 'block';
+  box.style.background = bg;
+  box.style.border = '2px solid ' + border;
+  box.innerHTML = '<div style="font-size:22px;margin-bottom:4px;">' + icon + ' <strong>' + title + '</strong></div>'
+    + '<div style="color:#333;">' + body + '</div>';
+}
+
 function switchTab(tab) { currentTab = tab; renderRegister(); }
 
 /* ===== حساب التركيبة الجينية (عودي) ===== */
@@ -979,13 +1058,29 @@ function getInbreedingWarnings(a, allAnimals) {
 }
 
 /* ===== توصيات التزاوج الذكي — اسم وسلالة لكل مرشح بدون قرابة ===== */
+function _sireScore(b) {
+  /* أولوية الفحل للأنثى F1: نيوبي=1 بور=2 دمشقي=3 غيره=4 */
+  var bl = b.toLowerCase();
+  if (bl.indexOf('nubian') !== -1 || bl.indexOf('نيوبي') !== -1 || bl.indexOf('nubian') !== -1) return 1;
+  if (bl.indexOf('بور') !== -1 || bl.indexOf('boer') !== -1) return 2;
+  if (bl.indexOf('دمشقي') !== -1 || bl.indexOf('شامي') !== -1) return 3;
+  return 4;
+}
+
+function _sireLabel(b) {
+  var bl = b.toLowerCase();
+  if (bl.indexOf('nubian') !== -1 || bl.indexOf('نيوبي') !== -1) return 'نيوبي (Anglo-Nubian)';
+  if (bl.indexOf('بور') !== -1 || bl.indexOf('boer') !== -1) return 'بور (Boer)';
+  if (bl.indexOf('دمشقي') !== -1 || bl.indexOf('شامي') !== -1) return 'دمشقي (Damascus)';
+  return b;
+}
+
 function getSmartRecommendations(a, allAnimals) {
   var byId = {};
   allAnimals.forEach(function(x){ byId[x.id] = x; });
   var kinshipMap = getKinshipMap(a.id, byId, allAnimals);
   kinshipMap[a.id] = 'نفسه';
   var active = allAnimals.filter(function(x){ return x.status === 'active' && !kinshipMap[x.id]; });
-  var lines = [];
   var breed = (a.breed || '').trim();
   var isF1 = breed.indexOf('F1') !== -1 || breed.indexOf('f1') !== -1 || breed.indexOf('هجين') !== -1;
 
@@ -993,10 +1088,53 @@ function getSmartRecommendations(a, allAnimals) {
     return a.gender === 'أنثى' ? x.gender === 'ذكر' : x.gender === 'أنثى';
   });
 
+  /* ---- للإناث F1: عرض "خطة تسمين الجداء" الديناميكية ---- */
+  if (a.gender === 'أنثى' && isF1) {
+    var html = '<div style="background:#fffde7;border:2px solid #f9a825;border-radius:10px;padding:10px;margin-bottom:6px;">'
+      + '<div style="font-size:13px;font-weight:900;color:#f57f17;margin-bottom:8px;">&#x1F4A1; خطة تسمين الجداء (أفضل الخيارات المتاحة)</div>';
+
+    /* ابحث عن نيوبي غير مقرب */
+    var nubian = opposite.filter(function(x){ return _sireScore(x.breed||'') === 1; });
+    if (nubian.length > 0) {
+      var n = nubian[0];
+      html += '<div style="background:#e8f5e9;border-radius:8px;padding:8px;margin-bottom:6px;">'
+        + '<span style="font-size:16px;">&#x1F947;</span> <strong>الخيار الذهبي — التهجين الثلاثي:</strong><br/>'
+        + '<span style="color:#1b5e20;font-weight:700;">الفحل: ' + escHtml(n.name) + ' (' + escHtml(n.breed||'نيوبي') + ')</span><br/>'
+        + '<span style="font-size:11px;color:#388e3c;">الجداء ستأخذ اللحم والضخامة من النيوبي + قوة الأم الهجينة = نمو متفجر للبيع</span></div>';
+    } else {
+      html += '<div style="background:#fff3e0;border-radius:8px;padding:8px;margin-bottom:6px;">'
+        + '<span style="font-size:15px;">&#x1F947;</span> <strong>الخيار الأول (غير متوفر حالياً):</strong> فحل نيوبي (Anglo-Nubian)<br/>'
+        + '<span style="font-size:11px;color:#e65100;">يعطي نمواً سريعاً جداً للحم في التهجين الثلاثي — <strong>نوصي بالشراء</strong></span></div>';
+    }
+
+    /* البديل المتاح: بور أو دمشقي (بالأولوية) */
+    var fallback = opposite.filter(function(x){ var s = _sireScore(x.breed||''); return s === 2 || s === 3; });
+    fallback.sort(function(a,b){ return _sireScore(a.breed||'') - _sireScore(b.breed||''); });
+    if (fallback.length > 0) {
+      var f = fallback[0];
+      html += '<div style="background:#e3f2fd;border-radius:8px;padding:8px;">'
+        + '<span style="font-size:15px;">&#x1F4CC;</span> <strong>البديل المتاح فوراً للتلقيح:</strong><br/>'
+        + '<span style="color:#1565c0;font-weight:700;">الفحل ' + escHtml(f.name) + ' (' + escHtml(_sireLabel(f.breed||'')) + ')</span><br/>'
+        + '<span style="font-size:11px;color:#1976d2;">متوفر في القطيع الآن — جيد للإنتاج التجاري</span></div>';
+    } else if (opposite.length > 0) {
+      var oth = opposite[0];
+      html += '<div style="background:#e3f2fd;border-radius:8px;padding:8px;">'
+        + '<span style="font-size:15px;">&#x1F4CC;</span> <strong>البديل المتاح فوراً للتلقيح:</strong><br/>'
+        + '<span style="color:#1565c0;font-weight:700;">الفحل ' + escHtml(oth.name) + (oth.breed ? ' (' + escHtml(oth.breed) + ')' : '') + '</span></div>';
+    } else {
+      html += '<div style="background:#fce4ec;border-radius:8px;padding:8px;">'
+        + '<span style="font-size:15px;">&#x1F6D2;</span> <strong>لا يوجد فحل مؤهل غير مقرب في القطيع حالياً</strong><br/>'
+        + '<span style="font-size:11px;color:#c62828;">يُنصح بشراء فحل نيوبي أو بور من مزرعة مختلفة</span></div>';
+    }
+    html += '</div>';
+    return [html];
+  }
+
+  /* ---- للإناث غير F1 والذكور: المنطق الأصلي ---- */
+  var lines = [];
   if (opposite.length === 0) {
     if (a.gender === 'أنثى') {
-      var suggest = isF1 ? 'بور (Boer)' : 'دمشقي';
-      lines.push('<div style="color:#e65100;font-size:12px;font-weight:700;margin-bottom:4px;">&#x1F6D2; لا يوجد فحل مؤهل — يُنصح بشراء فحل <strong>' + suggest + '</strong> لتحقيق أفضل إنتاج هجين</div>');
+      lines.push('<div style="color:#e65100;font-size:12px;font-weight:700;margin-bottom:4px;">&#x1F6D2; لا يوجد فحل مؤهل — يُنصح بشراء فحل <strong>دمشقي</strong> لتحقيق أفضل إنتاج هجين</div>');
     } else {
       lines.push('<div style="color:#e65100;font-size:12px;font-weight:700;margin-bottom:4px;">&#x26A0;&#xFE0F; لا توجد إناث مؤهلة في القطيع حالياً</div>');
     }
@@ -1008,7 +1146,7 @@ function getSmartRecommendations(a, allAnimals) {
   opposite.forEach(function(x) {
     var b = (x.breed || '').toLowerCase();
     var isPref = a.gender === 'أنثى'
-      ? (!isF1 && b.indexOf('دمشقي') !== -1) || (isF1 && (b.indexOf('بور') !== -1 || b.indexOf('boer') !== -1))
+      ? (b.indexOf('دمشقي') !== -1 || b.indexOf('شامي') !== -1)
       : true;
     if (isPref) preferred.push(x); else others.push(x);
   });
@@ -1018,8 +1156,7 @@ function getSmartRecommendations(a, allAnimals) {
     var note = '';
     var b = (x.breed || '').toLowerCase();
     if (a.gender === 'أنثى') {
-      if (!isF1 && b.indexOf('دمشقي') !== -1) note = '— مُثالي لإنتاج F1';
-      else if (isF1 && (b.indexOf('بور') !== -1 || b.indexOf('boer') !== -1)) note = '— مُثالي لإنتاج لحم';
+      if (b.indexOf('دمشقي') !== -1 || b.indexOf('شامي') !== -1) note = '— مُثالي لإنتاج F1';
     }
     lines.push('<div style="color:#1b5e20;font-size:12px;font-weight:700;margin-bottom:4px;padding:3px 0;">&#x2705; مرشح مناسب للتزاوج: <span style="font-weight:900;">' + escHtml(x.name) + '</span>' + (x.breed ? ' (' + escHtml(x.breed) + ')' : '') + ' <span style="font-weight:400;font-size:11px;color:#388e3c;">' + (note || '— بدون قرابة') + '</span></div>');
   });
