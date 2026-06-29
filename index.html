@@ -327,12 +327,14 @@
   <!-- محرك الوراثة الافتراضي اللامتناهي -->
   <div id="sandbox-wrap" style="border:2px solid #7c4dff;border-radius:14px;padding:14px;margin-top:10px;background:#fafafa;">
     <!-- رأس الملعب -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
-      <div style="font-size:15px;font-weight:900;color:#6200ea;">🧬 ملعب الوراثة اللامتناهي</div>
-      <div style="display:flex;gap:6px;">
-        <div id="sim-timer" style="background:#e8eaf6;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;color:#3949ab;">⏳ 0 سنة</div>
-        <button onclick="simReset()" style="background:#ef9a9a;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:#b71c1c;">↺ إعادة</button>
+    <div style="font-size:15px;font-weight:900;color:#6200ea;margin-bottom:10px;">🧬 ملعب الوراثة اللامتناهي</div>
+    <!-- بطاقة الزمن الافتراضي -->
+    <div id="sim-timer" style="background:linear-gradient(135deg,#3949ab,#5c6bc0);border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:11px;color:#c5cae9;font-weight:700;margin-bottom:2px;">الزمن الافتراضي المنقضي</div>
+        <div id="sim-timer-val" style="font-size:22px;font-weight:900;color:#fff;">⏳ 0.0 سنة</div>
       </div>
+      <div style="font-size:36px;opacity:0.4;">🕰️</div>
     </div>
 
     <!-- إضافة فحل مخصص -->
@@ -370,6 +372,7 @@
     </div>
 
     <button id="sim-mate-btn" onclick="simMate()" style="width:100%;background:linear-gradient(135deg,#7c4dff,#512da8);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:inherit;">⚡ توليد الجيل القادم</button>
+    <button onclick="simReset()" style="width:100%;background:linear-gradient(135deg,#c62828,#ef5350);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:inherit;">🔄 إعادة ضبط المحاكي</button>
     <div id="sim-result" style="display:none;border-radius:10px;padding:11px;font-size:13px;line-height:1.8;margin-bottom:10px;"></div>
     <div id="sim-log-wrap" style="display:none;">
       <div style="font-size:12px;font-weight:900;color:#555;margin-bottom:6px;">📜 سجل التزاوجات</div>
@@ -1001,7 +1004,8 @@ function simRebuildSelects() {
   var females = SIM.herd.filter(function(x){ return x.gender==='F'; });
   function buildOptions(list, sel) {
     return '<option value="">اختر...</option>' + list.map(function(a){
-      return '<option value="' + a.id + '"' + (String(a.id)===sel?' selected':'') + '>' + escHtml(a.name) + (a.gen>0?' (الجيل '+a.gen+')':'') + '</option>';
+      var suffix = a.gen > 0 ? ' — ' + escHtml(simBloodStr(a.blood)) : '';
+      return '<option value="' + a.id + '"' + (String(a.id)===sel?' selected':'') + '>' + escHtml(a.name) + suffix + '</option>';
     }).join('');
   }
   sireEl.innerHTML = buildOptions(males, sv);
@@ -1009,7 +1013,8 @@ function simRebuildSelects() {
 }
 
 function simRender() {
-  document.getElementById('sim-timer').textContent = '⏳ ' + SIM.time.toFixed(1) + ' سنة';
+  var tv = document.getElementById('sim-timer-val');
+  if (tv) tv.textContent = '⏳ ' + SIM.time.toFixed(1) + ' سنة';
   simRebuildSelects();
   var logEl = document.getElementById('sim-log');
   var logWrap = document.getElementById('sim-log-wrap');
@@ -1019,12 +1024,25 @@ function simRender() {
     } else {
       logWrap.style.display = 'block';
       logEl.innerHTML = SIM.log.slice().reverse().map(function(e,i){
-        var goldenBadge = e.golden ? ' <span style="color:#2e7d32;font-weight:900;">👑</span>' : '';
-        return '<div style="border-bottom:1px solid #eee;padding:4px 0;' + (e.golden?'background:#f1f8e9;border-radius:6px;padding:4px 6px;':'') + '">'
-          + '<span style="color:#7b1fa2;font-weight:700;">#' + (SIM.log.length-i) + '</span> '
-          + escHtml(e.sire) + ' ✕ ' + escHtml(e.dam) + goldenBadge
-          + ' → <strong>' + escHtml(e.offMale) + '</strong> + <strong>' + escHtml(e.offFemale) + '</strong>'
-          + '<br/><span style="color:#555;font-size:10px;">' + escHtml(e.bloodStr) + '</span></div>';
+        var n = SIM.log.length - i;
+        var isGold = e.golden;
+        var bg = isGold ? 'background:linear-gradient(135deg,#f9fbe7,#f1f8e9);border:2px solid #aed581;' : 'border-bottom:1px solid #eee;';
+        var numColor = isGold ? '#33691e' : '#7b1fa2';
+        var goldenTag = isGold ? ' <span style="background:#558b2f;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:900;">👑 ذهبي</span>' : '';
+        return '<div style="' + bg + 'border-radius:8px;padding:6px 8px;margin-bottom:6px;">'
+          + '<span style="color:' + numColor + ';font-weight:900;font-size:10px;">#' + n + '</span>'
+          + goldenTag
+          + '<div style="font-size:12px;font-weight:700;margin-top:3px;">'
+          + '<span style="color:#1565c0;">' + escHtml(e.sire) + '</span>'
+          + ' <span style="color:#888;">×</span> '
+          + '<span style="color:#6a1b9a;">' + escHtml(e.dam) + '</span>'
+          + ' <span style="color:#555;">⬅️</span> '
+          + '<strong>' + escHtml(e.offMale) + '</strong>'
+          + ' <span style="color:#888;">+</span> '
+          + '<strong>' + escHtml(e.offFemale) + '</strong>'
+          + '</div>'
+          + '<div style="color:#777;font-size:10px;margin-top:2px;">' + escHtml(e.bloodStr) + '</div>'
+          + '</div>';
       }).join('');
     }
   }
