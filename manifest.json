@@ -1,23 +1,40 @@
 {
-  "name": "ماعز بوزيان",
-  "short_name": "ماعز بوزيان",
-  "description": "مشروع تربية الماعز — منزل بوزيان، سيدي بوزيد",
+  "name": "سجل القطيع - الدمشقي العربي",
+  "short_name": "القطيع",
+  "description": "سجل قطيع الماعز — تتبع الحيوانات، المحاكي الوراثي، والتغذية",
   "start_url": "/goats-project/",
+  "scope": "/goats-project/",
   "display": "standalone",
-  "background_color": "#f5f5f0",
+  "background_color": "#ffffff",
   "theme_color": "#2e7d32",
   "lang": "ar",
   "dir": "rtl",
+  "orientation": "portrait",
+  "categories": ["productivity", "lifestyle"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%232e7d32'/%3E%3Ctext y='140' x='96' text-anchor='middle' font-size='120'%3E%F0%9F%90%90%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='36' fill='%232e7d32'/%3E%3Ccircle cx='96' cy='96' r='76' fill='%23388e3c'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' font-family='serif'%3E%F0%9F%90%90%3C/text%3E%3C/svg%3E",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%232e7d32'/%3E%3Ctext y='380' x='256' text-anchor='middle' font-size='320'%3E%F0%9F%90%90%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%232e7d32'/%3E%3Ccircle cx='256' cy='256' r='200' fill='%23388e3c'/%3E%3Ctext x='256' y='350' text-anchor='middle' font-size='270' font-family='serif'%3E%F0%9F%90%90%3C/text%3E%3C/svg%3E",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "سجل القطيع",
+      "url": "/goats-project/#register",
+      "description": "فتح سجل الحيوانات"
+    },
+    {
+      "name": "ملعب الوراثة",
+      "url": "/goats-project/#breeding",
+      "description": "المحاكي الوراثي"
     }
   ]
 }
