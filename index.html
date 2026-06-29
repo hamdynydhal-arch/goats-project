@@ -326,6 +326,7 @@
 
   <!-- محرك الوراثة الافتراضي اللامتناهي -->
   <div id="sandbox-wrap" style="border:2px solid #7c4dff;border-radius:14px;padding:14px;margin-top:10px;background:#fafafa;">
+    <!-- رأس الملعب -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
       <div style="font-size:15px;font-weight:900;color:#6200ea;">🧬 ملعب الوراثة اللامتناهي</div>
       <div style="display:flex;gap:6px;">
@@ -333,17 +334,42 @@
         <button onclick="simReset()" style="background:#ef9a9a;border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:#b71c1c;">↺ إعادة</button>
       </div>
     </div>
+
+    <!-- إضافة فحل مخصص -->
+    <details style="margin-bottom:10px;">
+      <summary style="font-size:12px;font-weight:700;color:#1565c0;cursor:pointer;padding:6px 0;">➕ إضافة فحل مخصص (عائلة جديدة)</summary>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <input id="sim-custom-name" placeholder="مثال: دمشقي-ج" style="flex:1;min-width:100px;padding:7px;border-radius:8px;border:2px solid #90caf9;font-size:12px;font-family:inherit;" />
+        <select id="sim-custom-breed" style="flex:1;min-width:100px;padding:7px;border-radius:8px;border:2px solid #90caf9;font-size:12px;font-family:inherit;">
+          <option value="عربي">عربي بلدي</option>
+          <option value="دمشقي" selected>دمشقي نقي</option>
+          <option value="نيوبي">نيوبي</option>
+          <option value="بور">بور</option>
+          <option value="ألبين">ألبين</option>
+          <option value="مالطي">مالطي</option>
+        </select>
+        <button onclick="simAddCustomSire()" style="background:#1565c0;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">إضافة ♂</button>
+      </div>
+    </details>
+
+    <!-- اختيار التزاوج -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
       <div>
         <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:3px;">🐐 الأنثى</label>
-        <select id="sim-dam" style="width:100%;padding:7px;border-radius:8px;border:2px solid #ce93d8;font-size:12px;font-family:inherit;"></select>
+        <select id="sim-dam" onchange="simValidate()" style="width:100%;padding:7px;border-radius:8px;border:2px solid #ce93d8;font-size:12px;font-family:inherit;"></select>
       </div>
       <div>
         <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:3px;">♂ الفحل</label>
-        <select id="sim-sire" style="width:100%;padding:7px;border-radius:8px;border:2px solid #90caf9;font-size:12px;font-family:inherit;"></select>
+        <select id="sim-sire" onchange="simValidate()" style="width:100%;padding:7px;border-radius:8px;border:2px solid #90caf9;font-size:12px;font-family:inherit;"></select>
       </div>
     </div>
-    <button onclick="simMate()" style="width:100%;background:linear-gradient(135deg,#7c4dff,#512da8);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:inherit;">⚡ توليد الجيل القادم</button>
+
+    <!-- تحذير قرابة فوري -->
+    <div id="sim-inb-warn" style="display:none;background:#ffebee;border:2px solid #c62828;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;font-weight:700;color:#b71c1c;line-height:1.6;">
+      🔴 تحذير بيولوجي: زواج أقارب مباشر! سيؤدي إلى انهيار المناعة. استخدم فحلاً من خط دم مختلف.
+    </div>
+
+    <button id="sim-mate-btn" onclick="simMate()" style="width:100%;background:linear-gradient(135deg,#7c4dff,#512da8);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:inherit;">⚡ توليد الجيل القادم</button>
     <div id="sim-result" style="display:none;border-radius:10px;padding:11px;font-size:13px;line-height:1.8;margin-bottom:10px;"></div>
     <div id="sim-log-wrap" style="display:none;">
       <div style="font-size:12px;font-weight:900;color:#555;margin-bottom:6px;">📜 سجل التزاوجات</div>
@@ -814,13 +840,21 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
    =================================================================== */
 var SIM = { herd: [], time: 0, log: [], nextId: 1 };
 
+/* G0: فحول وإناث مسمّاة لكل سلالة أساسية */
 var SIM_G0 = [
-  { key: 'عربي',    label: 'عربي بلدي' },
-  { key: 'دمشقي',  label: 'دمشقي (شامي)' },
-  { key: 'ألبين',  label: 'ألبين (Alpine)' },
-  { key: 'نيوبي',  label: 'نيوبي (Anglo-Nubian)' },
-  { key: 'بور',    label: 'بور (Boer)' },
-  { key: 'مالطي',  label: 'مالطي (Maltese)' }
+  /* الإناث العربيات — قاعدة القطيع */
+  { key:'عربي', label:'عربية بلدي-1', gender:'F' },
+  { key:'عربي', label:'عربية بلدي-2', gender:'F' },
+  { key:'عربي', label:'عربية بلدي-3', gender:'F' },
+  /* فحول دمشقية بعائلتين مستقلتين */
+  { key:'دمشقي', label:'دمشقي-أ (عائلة 1)', gender:'M' },
+  { key:'دمشقي', label:'دمشقي-ب (عائلة 2)', gender:'M' },
+  /* سلالات أخرى */
+  { key:'نيوبي', label:'نيوبي-أ', gender:'M' },
+  { key:'بور',   label:'بور-أ',   gender:'M' },
+  { key:'ألبين', label:'ألبين-أ', gender:'M' },
+  { key:'مالطي', label:'مالطي-أ', gender:'M' },
+  { key:'مالطي', label:'مالطية-أ', gender:'F' }
 ];
 
 function simBloodStr(blood) {
@@ -886,9 +920,9 @@ function simEvaluate(sire, dam, offBlood, inbStatus) {
     title='تحذير كارثي — زواج أقارب مباشر!';
     body='هذا التزاوج بين أب وابنته (أو أم وابنها). <strong>النتيجة: تشوهات، إجهاض، ضعف مناعة.</strong> نسبة الدم الموروث مرتفعة جداً من طرف واحد بخسارة كاملة لقوة الهجين. <strong>لا تُنفَّذ هذه العملية في الواقع أبداً.</strong>';
   } else if (inbStatus === 'sibling') {
-    bg='#fff3e0'; border='#e65100'; icon='⚠️';
-    title='تحذير — تزاوج أخوة!';
-    body='الفحل والأنثى يشتركان في أحد الوالدين. <strong>هذا يُفقد قوة الهجين ويُضعف المناعة.</strong> استخدم فحلاً من خارج القطيع.';
+    bg='#ffebee'; border='#b71c1c'; icon='🔴';
+    title='تحذير بيولوجي — تزاوج أخوة شقيقة!';
+    body='الفحل والأنثى أخوة من نفس الأب والأم. <strong>زواج الأقارب المباشر يُسبب انهيار المناعة وتشوهات خلقية.</strong> استخدم فحلاً من خط دم مختلف تماماً.';
   } else if (inbStatus === 'related') {
     bg='#fff8e1'; border='#f57f17'; icon='🟡';
     title='تحذير — يوجد جد مشترك';
@@ -968,6 +1002,7 @@ function simMate() {
   var damId  = parseInt(document.getElementById('sim-dam').value);
   if (!sireId || !damId) { alert('اختر الفحل والأنثى أولاً'); return; }
   if (sireId === damId) { alert('لا يمكن تزويج الحيوان مع نفسه'); return; }
+  if (document.getElementById('sim-mate-btn').disabled) return;
 
   var sire = SIM.herd.filter(function(x){ return x.id===sireId; })[0];
   var dam  = SIM.herd.filter(function(x){ return x.id===damId; })[0];
@@ -985,8 +1020,7 @@ function simMate() {
   var maleName   = genLabel + '-ذكر-' + maleId;
   var femaleName = genLabel + '-أنثى-' + femaleId;
 
-  if (inbStatus !== 'parent') {
-    /* نضيف الجيل الجديد للقطيع فقط إذا لم يكن أب-ابنة */
+  if (inbStatus !== 'parent' && inbStatus !== 'sibling') {
     SIM.herd.push({ id:maleId,   name:maleName,   gen:offGen, gender:'M', blood:offBlood, parents:[sireId,damId] });
     SIM.herd.push({ id:femaleId, name:femaleName, gen:offGen, gender:'F', blood:offBlood, parents:[sireId,damId] });
     SIM.time += 1.5;
@@ -1014,11 +1048,47 @@ function simReset() {
   SIM.herd = []; SIM.time = 0; SIM.log = []; SIM.nextId = 1;
   SIM_G0.forEach(function(b) {
     var blood = {}; blood[b.key] = 1;
-    SIM.herd.push({ id:SIM.nextId++, name:b.label+' (ذكر)',  gen:0, gender:'M', blood:blood, parents:[] });
-    SIM.herd.push({ id:SIM.nextId++, name:b.label+' (أنثى)', gen:0, gender:'F', blood:blood, parents:[] });
+    SIM.herd.push({ id:SIM.nextId++, name:b.label, gen:0, gender:b.gender, blood:blood, parents:[] });
   });
-  document.getElementById('sim-result').style.display = 'none';
+  var res = document.getElementById('sim-result');
+  if (res) res.style.display = 'none';
+  var warn = document.getElementById('sim-inb-warn');
+  if (warn) warn.style.display = 'none';
   simRender();
+  simValidate();
+}
+
+function simAddCustomSire() {
+  var nameEl  = document.getElementById('sim-custom-name');
+  var breedEl = document.getElementById('sim-custom-breed');
+  var name  = (nameEl.value || '').trim();
+  var breed = breedEl.value;
+  if (!name) { nameEl.focus(); return; }
+  var blood = {}; blood[breed] = 1;
+  SIM.herd.push({ id:SIM.nextId++, name:name+' (ذكر-G0)', gen:0, gender:'M', blood:blood, parents:[] });
+  nameEl.value = '';
+  simRender();
+}
+
+/* التحقق الفوري قبل التوليد */
+function simValidate() {
+  var sireId = parseInt(document.getElementById('sim-sire').value);
+  var damId  = parseInt(document.getElementById('sim-dam').value);
+  var warnEl = document.getElementById('sim-inb-warn');
+  var btnEl  = document.getElementById('sim-mate-btn');
+  if (!sireId || !damId) {
+    warnEl.style.display='none';
+    btnEl.disabled=false; btnEl.style.opacity='1';
+    return;
+  }
+  var status = simCheckInbreeding(sireId, damId);
+  if (status === 'parent' || status === 'sibling') {
+    warnEl.style.display='block';
+    btnEl.disabled=true; btnEl.style.opacity='0.4'; btnEl.style.cursor='not-allowed';
+  } else {
+    warnEl.style.display='none';
+    btnEl.disabled=false; btnEl.style.opacity='1'; btnEl.style.cursor='pointer';
+  }
 }
 
 function switchTab(tab) { currentTab = tab; renderRegister(); }
