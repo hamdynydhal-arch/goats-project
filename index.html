@@ -29,6 +29,7 @@
     .screen { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
     .screen.active { display: block; animation: fadeIn 0.25s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity:0; transform:translateY(100%); } to { opacity:1; transform:translateY(0); } }
 
     .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; max-width: 600px; margin: 0 auto; }
     .main-card { background: var(--card); border-radius: 20px; padding: 24px 14px; text-align: center; cursor: pointer; box-shadow: var(--shadow); border: 3px solid transparent; transition: transform 0.12s; -webkit-tap-highlight-color: transparent; }
@@ -187,6 +188,19 @@
   </style>
 </head>
 <body>
+
+<!-- ===== نافذة التثبيت المخصصة ===== -->
+<div id="pwa-popup" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:0 12px 12px;">
+  <div style="background:#fff;border-radius:20px 20px 16px 16px;box-shadow:0 -4px 32px rgba(0,0,0,0.22);padding:24px 20px 20px;text-align:center;max-width:480px;margin:0 auto;border-top:4px solid #2e7d32;">
+    <div style="font-size:64px;line-height:1;margin-bottom:8px;">🐐</div>
+    <div style="font-size:19px;font-weight:900;color:#1b5e20;margin-bottom:6px;">ثبّت تطبيق القطيع على هاتفك!</div>
+    <div style="font-size:14px;color:#555;margin-bottom:20px;line-height:1.6;">للوصول السريع للسجل والمحاكي الوراثي في أي وقت<br/>بضغطة زر من شاشتك الرئيسية.</div>
+    <button id="pwa-install-btn" onclick="pwaInstall()" style="width:100%;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;border:none;border-radius:12px;padding:14px;font-size:17px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:inherit;box-shadow:0 4px 14px rgba(46,125,50,0.4);">📲 تثبيت الآن</button>
+    <button onclick="pwaDismiss()" style="background:none;border:none;color:#999;font-size:14px;cursor:pointer;font-family:inherit;padding:6px;">لاحقاً</button>
+  </div>
+</div>
+<!-- overlay خفيف خلف النافذة -->
+<div id="pwa-overlay" onclick="pwaDismiss()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:9998;"></div>
 
 <div id="app-header">
   <button id="back-btn" onclick="goHome()">←</button>
@@ -1755,6 +1769,51 @@ async function exportPDF() {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> تحميل التقرير (PDF)';
   }
+}
+
+// ===== PWA Install Popup =====
+var _pwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _pwaPrompt = e;
+  /* لا تُزعج المستخدم إذا اختار "لاحقاً" مؤخراً */
+  var snoozed = localStorage.getItem('pwa-snooze');
+  if (snoozed && Date.now() < parseInt(snoozed)) return;
+  /* لا تعرض إذا كان التطبيق مثبتاً فعلاً */
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  setTimeout(function() { pwaShow(); }, 2000);
+});
+
+window.addEventListener('appinstalled', function() { pwaHide(); });
+
+function pwaShow() {
+  var p = document.getElementById('pwa-popup');
+  var o = document.getElementById('pwa-overlay');
+  if (p) { p.style.display='block'; p.style.animation='slideUp .35s ease'; }
+  if (o) o.style.display='block';
+}
+
+function pwaHide() {
+  var p = document.getElementById('pwa-popup');
+  var o = document.getElementById('pwa-overlay');
+  if (p) p.style.display='none';
+  if (o) o.style.display='none';
+}
+
+function pwaInstall() {
+  if (!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(function(r) {
+    if (r.outcome === 'accepted') pwaHide();
+    _pwaPrompt = null;
+  });
+}
+
+function pwaDismiss() {
+  /* تأجيل لـ 4 أيام */
+  localStorage.setItem('pwa-snooze', Date.now() + 4 * 24 * 3600 * 1000);
+  pwaHide();
 }
 
 // ===== تهيئة =====
