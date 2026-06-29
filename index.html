@@ -913,20 +913,52 @@ function simCountDistinctBreeds(blood) {
   return Object.keys(blood).filter(function(k){ return blood[k] >= 0.15; }).length;
 }
 
+/* فحص الهدف الذهبي: 75% دمشقي ± 2% و25% عربي ± 2% */
+function simIsGoldenCross(blood) {
+  var dam = blood['دمشقي'] || 0;
+  var ara = blood['عربي']  || 0;
+  var total = Object.keys(blood).reduce(function(s,k){ return s + blood[k]; }, 0);
+  /* يجب أن يكون الدم من سلالتين فقط وبالنسب المطلوبة */
+  if (Math.abs(total - 1) > 0.01) return false;
+  if (Object.keys(blood).filter(function(k){ return blood[k] > 0.02; }).length !== 2) return false;
+  return Math.abs(dam - 0.75) <= 0.02 && Math.abs(ara - 0.25) <= 0.02;
+}
+
+/* فحص تثبيت السلالة: كلاهما دمشقي عربي وليسا أخوة */
+function simIsStabilization(sire, dam) {
+  return sire.isGolden && dam.isGolden;
+}
+
 function simEvaluate(sire, dam, offBlood, inbStatus) {
   var bg, border, icon, title, body;
+
   if (inbStatus === 'parent') {
     bg='#ffebee'; border='#b71c1c'; icon='🔴';
     title='تحذير كارثي — زواج أقارب مباشر!';
     body='هذا التزاوج بين أب وابنته (أو أم وابنها). <strong>النتيجة: تشوهات، إجهاض، ضعف مناعة.</strong> نسبة الدم الموروث مرتفعة جداً من طرف واحد بخسارة كاملة لقوة الهجين. <strong>لا تُنفَّذ هذه العملية في الواقع أبداً.</strong>';
+
   } else if (inbStatus === 'sibling') {
     bg='#ffebee'; border='#b71c1c'; icon='🔴';
     title='تحذير بيولوجي — تزاوج أخوة شقيقة!';
     body='الفحل والأنثى أخوة من نفس الأب والأم. <strong>زواج الأقارب المباشر يُسبب انهيار المناعة وتشوهات خلقية.</strong> استخدم فحلاً من خط دم مختلف تماماً.';
+
+  } else if (simIsStabilization(sire, dam)) {
+    /* تثبيت سلالة الدمشقي العربي */
+    bg='#e3f2fd'; border='#1565c0'; icon='🔵';
+    title='تثبيت السلالة (تزاوج آمن لأبناء العمومة)';
+    body='ممتاز! أنت الآن تقوم بتثبيت جينات <strong>الدمشقي العربي</strong> للأجيال القادمة (G3، G4...) دون تضارب جيني. القطيع يتجانس ويصبح أكثر ثباتاً في كل جيل.';
+
+  } else if (simIsGoldenCross(offBlood)) {
+    /* الهدف الذهبي في المواليد الجديدة */
+    bg='#e8f5e9'; border='#2e7d32'; icon='👑';
+    title='إنجاز وراثي! سلالة الدمشقي العربي';
+    body='لقد نجحت في تأسيس سلالة <strong>الدمشقي العربي</strong>. هذا الجيل يمتلك <strong>ضخامة الشامي وحليبها</strong>، مع <strong>مناعة وتأقلم البلدي التونسي</strong>. احتفظ بهذه المواليد كنواة ثابتة للقطيع.';
+
   } else if (inbStatus === 'related') {
     bg='#fff8e1'; border='#f57f17'; icon='🟡';
     title='تحذير — يوجد جد مشترك';
     body='الفحل والأنثى يشتركان في جد واحد على الأقل. يُفضَّل استخدام فحل غير مقرب للحفاظ على قوة الهجين.';
+
   } else {
     var distinctBreeds = simCountDistinctBreeds(offBlood);
     var sireKeys = Object.keys(sire.blood).filter(function(k){ return sire.blood[k] >= 0.5; });
@@ -987,9 +1019,10 @@ function simRender() {
     } else {
       logWrap.style.display = 'block';
       logEl.innerHTML = SIM.log.slice().reverse().map(function(e,i){
-        return '<div style="border-bottom:1px solid #eee;padding:4px 0;">'
+        var goldenBadge = e.golden ? ' <span style="color:#2e7d32;font-weight:900;">👑</span>' : '';
+        return '<div style="border-bottom:1px solid #eee;padding:4px 0;' + (e.golden?'background:#f1f8e9;border-radius:6px;padding:4px 6px;':'') + '">'
           + '<span style="color:#7b1fa2;font-weight:700;">#' + (SIM.log.length-i) + '</span> '
-          + escHtml(e.sire) + ' ✕ ' + escHtml(e.dam)
+          + escHtml(e.sire) + ' ✕ ' + escHtml(e.dam) + goldenBadge
           + ' → <strong>' + escHtml(e.offMale) + '</strong> + <strong>' + escHtml(e.offFemale) + '</strong>'
           + '<br/><span style="color:#555;font-size:10px;">' + escHtml(e.bloodStr) + '</span></div>';
       }).join('');
@@ -1013,18 +1046,21 @@ function simMate() {
   var ev        = simEvaluate(sire, dam, offBlood, inbStatus);
 
   /* رقم الجيل للتسمية */
-  var genLabel = 'G' + offGen;
-  var maleId   = SIM.nextId++;
-  var femaleId = SIM.nextId++;
-  var bloodStr = simBloodStr(offBlood);
-  var maleName   = genLabel + '-ذكر-' + maleId;
-  var femaleName = genLabel + '-أنثى-' + femaleId;
+  var genLabel  = 'G' + offGen;
+  var maleId    = SIM.nextId++;
+  var femaleId  = SIM.nextId++;
+  var bloodStr  = simBloodStr(offBlood);
+  var isGolden  = simIsGoldenCross(offBlood);
+  var baseLabel = isGolden ? '👑 الدمشقي العربي' : genLabel;
+  var maleName   = baseLabel + '-ذكر-'  + maleId;
+  var femaleName = baseLabel + '-أنثى-' + femaleId;
 
-  if (inbStatus !== 'parent' && inbStatus !== 'sibling') {
-    SIM.herd.push({ id:maleId,   name:maleName,   gen:offGen, gender:'M', blood:offBlood, parents:[sireId,damId] });
-    SIM.herd.push({ id:femaleId, name:femaleName, gen:offGen, gender:'F', blood:offBlood, parents:[sireId,damId] });
+  var blocked = (inbStatus === 'parent' || inbStatus === 'sibling');
+  if (!blocked) {
+    SIM.herd.push({ id:maleId,   name:maleName,   gen:offGen, gender:'M', blood:offBlood, parents:[sireId,damId], isGolden:isGolden });
+    SIM.herd.push({ id:femaleId, name:femaleName, gen:offGen, gender:'F', blood:offBlood, parents:[sireId,damId], isGolden:isGolden });
     SIM.time += 1.5;
-    SIM.log.push({ sire:sire.name, dam:dam.name, offMale:maleName, offFemale:femaleName, bloodStr:bloodStr });
+    SIM.log.push({ sire:sire.name, dam:dam.name, offMale:maleName, offFemale:femaleName, bloodStr:bloodStr, golden:isGolden });
   }
 
   var box = document.getElementById('sim-result');
@@ -1033,12 +1069,13 @@ function simMate() {
   box.style.border = '2px solid ' + ev.border;
   box.innerHTML = '<div style="font-size:16px;font-weight:900;margin-bottom:6px;">' + ev.icon + ' ' + escHtml(ev.title) + '</div>'
     + '<div style="color:#333;font-size:12px;line-height:1.7;">' + ev.body + '</div>'
-    + (inbStatus === 'parent' ? '' :
+    + (blocked ? '' :
       '<div style="margin-top:8px;padding:7px;background:rgba(0,0,0,0.04);border-radius:8px;font-size:12px;">'
       + '🧬 <strong>نسب الدم:</strong> ' + escHtml(bloodStr) + '<br/>'
       + '📅 <strong>الجيل:</strong> G' + offGen + ' &nbsp;|&nbsp; '
       + '👨 <strong>ذكر:</strong> ' + escHtml(maleName) + ' &nbsp;|&nbsp; '
       + '👩 <strong>أنثى:</strong> ' + escHtml(femaleName)
+      + (isGolden ? '<br/><span style="color:#2e7d32;font-weight:900;">👑 سلالة الدمشقي العربي مؤسَّسة!</span>' : '')
       + '</div>');
 
   simRender();
